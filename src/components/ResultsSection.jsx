@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { HiSwitchHorizontal } from 'react-icons/hi';
+import { motion as Motion } from 'framer-motion';
+import { HiSwitchHorizontal, HiRefresh } from 'react-icons/hi';
 import TDEEChart from './TDEEChart';
 import WeightProjection from './WeightProjection';
 import MealPlanSection from './MealPlanSection';
 
-export default function ResultsSection({ results, weightUnit }) {
+export default function ResultsSection({ results, weightUnit, onShuffleMealPlan }) {
   const [simpleMode, setSimpleMode] = useState(false);
+  const canShuffle = typeof onShuffleMealPlan === 'function';
 
   if (!results) return null;
 
@@ -22,7 +23,7 @@ export default function ResultsSection({ results, weightUnit }) {
   return (
     <section id="results" className="bg-dark py-12 sm:py-20 px-4">
       <div className="max-w-2xl mx-auto">
-        <motion.div
+        <Motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -31,12 +32,12 @@ export default function ResultsSection({ results, weightUnit }) {
         >
           <p className="text-gold text-sm font-semibold tracking-widest uppercase mb-2">Your Results</p>
           <h2 className="text-2xl sm:text-3xl font-bold text-white">Daily Targets</h2>
-        </motion.div>
+        </Motion.div>
 
         {/* Macro Summary Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
           {macroCards.map((card, i) => (
-            <motion.div
+            <Motion.div
               key={card.label}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -49,7 +50,7 @@ export default function ResultsSection({ results, weightUnit }) {
                 {card.value}<span className="text-sm font-normal text-gray-500 ml-1">{card.unit}</span>
               </p>
               <p className="text-xs text-gray-500 mt-1">{card.sub}</p>
-            </motion.div>
+            </Motion.div>
           ))}
         </div>
 
@@ -71,20 +72,34 @@ export default function ResultsSection({ results, weightUnit }) {
         </div>
 
         {/* Simple Mode Toggle */}
-        <div className="flex items-center justify-center gap-3 mb-6">
-          <span className={`text-sm ${!simpleMode ? 'text-white' : 'text-gray-500'}`}>Detailed Plan</span>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-center gap-3 mb-6">
+          <div className="flex items-center justify-center gap-3">
+            <span className={`text-sm ${!simpleMode ? 'text-white' : 'text-gray-500'}`}>Detailed Plan</span>
+            <button
+              onClick={() => setSimpleMode(!simpleMode)}
+              className={`relative w-12 h-6 rounded-full cursor-pointer transition-colors ${
+                simpleMode ? 'bg-gold' : 'bg-dark-border'
+              }`}
+            >
+              <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                simpleMode ? 'translate-x-6' : 'translate-x-0.5'
+              }`} />
+            </button>
+            <span className={`text-sm ${simpleMode ? 'text-white' : 'text-gray-500'}`}>Simple Mode</span>
+            <HiSwitchHorizontal className="text-gray-500 text-sm" />
+          </div>
           <button
-            onClick={() => setSimpleMode(!simpleMode)}
-            className={`relative w-12 h-6 rounded-full cursor-pointer transition-colors ${
-              simpleMode ? 'bg-gold' : 'bg-dark-border'
+            onClick={onShuffleMealPlan}
+            disabled={!canShuffle}
+            className={`inline-flex items-center justify-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
+              canShuffle
+                ? 'border-gold/40 bg-gold/10 text-gold hover:bg-gold/20 cursor-pointer'
+                : 'border-dark-border bg-dark-card text-gray-500 cursor-not-allowed'
             }`}
           >
-            <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
-              simpleMode ? 'translate-x-6' : 'translate-x-0.5'
-            }`} />
+            <HiRefresh className="text-base" />
+            Shuffle Meals
           </button>
-          <span className={`text-sm ${simpleMode ? 'text-white' : 'text-gray-500'}`}>Simple Mode</span>
-          <HiSwitchHorizontal className="text-gray-500 text-sm" />
         </div>
 
         {/* Meal Plan */}

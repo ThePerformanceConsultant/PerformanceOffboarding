@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import { HiClock, HiLightningBolt, HiChevronDown, HiChevronUp } from 'react-icons/hi';
 import { useState } from 'react';
 
@@ -15,12 +15,13 @@ export default function MealPlanSection({ mealPlan, simpleMode }) {
       protein: +(acc.protein + meal.totals.protein).toFixed(1),
       carbs: +(acc.carbs + meal.totals.carbs).toFixed(1),
       fat: +(acc.fat + meal.totals.fat).toFixed(1),
+      fibre: +(acc.fibre + (meal.totals.fibre || 0)).toFixed(1),
     }),
-    { calories: 0, protein: 0, carbs: 0, fat: 0 }
+    { calories: 0, protein: 0, carbs: 0, fat: 0, fibre: 0 }
   );
 
   return (
-    <motion.div
+    <Motion.div
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
@@ -38,7 +39,7 @@ export default function MealPlanSection({ mealPlan, simpleMode }) {
         </div>
         <div className="text-right text-xs text-gray-500">
           <p>Day Total: {dayTotals.calories} kcal</p>
-          <p>P: {dayTotals.protein}g | C: {dayTotals.carbs}g | F: {dayTotals.fat}g</p>
+          <p>P: {dayTotals.protein}g | C: {dayTotals.carbs}g | F: {dayTotals.fat}g | Fi: {dayTotals.fibre}g</p>
         </div>
       </div>
 
@@ -49,7 +50,7 @@ export default function MealPlanSection({ mealPlan, simpleMode }) {
 
         <div className="space-y-4">
           {mealPlan.meals.map((meal, i) => (
-            <motion.div
+            <Motion.div
               key={i}
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -105,7 +106,7 @@ export default function MealPlanSection({ mealPlan, simpleMode }) {
 
                 {/* Expanded Ingredients */}
                 {expandedMeal === i && (
-                  <motion.div
+                  <Motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     transition={{ duration: 0.2 }}
@@ -134,6 +135,7 @@ export default function MealPlanSection({ mealPlan, simpleMode }) {
                             <th className="text-right pb-2 font-medium">Prot</th>
                             <th className="text-right pb-2 font-medium">Carbs</th>
                             <th className="text-right pb-2 font-medium">Fat</th>
+                            <th className="text-right pb-2 font-medium">Fibre</th>
                             <th className="text-right pb-2 font-medium">kcal</th>
                           </tr>
                         </thead>
@@ -145,6 +147,7 @@ export default function MealPlanSection({ mealPlan, simpleMode }) {
                               <td className="py-1.5 text-right">{ing.protein}g</td>
                               <td className="py-1.5 text-right">{ing.carbs}g</td>
                               <td className="py-1.5 text-right">{ing.fat}g</td>
+                              <td className="py-1.5 text-right">{ing.fibre || 0}g</td>
                               <td className="py-1.5 text-right text-gold">{ing.calories}</td>
                             </tr>
                           ))}
@@ -156,18 +159,19 @@ export default function MealPlanSection({ mealPlan, simpleMode }) {
                             <td className="pt-2 text-right">{meal.totals.protein}g</td>
                             <td className="pt-2 text-right">{meal.totals.carbs}g</td>
                             <td className="pt-2 text-right">{meal.totals.fat}g</td>
+                            <td className="pt-2 text-right">{meal.totals.fibre || 0}g</td>
                             <td className="pt-2 text-right text-gold">{meal.totals.calories}</td>
                           </tr>
                         </tfoot>
                       </table>
                     )}
-                  </motion.div>
+                  </Motion.div>
                 )}
               </div>
-            </motion.div>
+            </Motion.div>
           ))}
         </div>
       </div>
-    </motion.div>
+    </Motion.div>
   );
 }

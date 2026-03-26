@@ -39,6 +39,26 @@ function App() {
   const [results, setResults] = useState(null);
   const resultsRef = useRef(null);
 
+  const buildMealPlan = (macros, mealPlanInputs, shuffleSeed = 0) => {
+    const rawMealPlan = generateMealPlan(
+      macros,
+      mealPlanInputs.numMeals,
+      mealPlanInputs.wakeTime,
+      mealPlanInputs.trainingTime,
+      shuffleSeed
+    );
+
+    const simpleMeals = convertToSimplePlan(rawMealPlan.meals);
+    return {
+      ...rawMealPlan,
+      shuffleSeed,
+      meals: rawMealPlan.meals.map((meal, i) => ({
+        ...meal,
+        simpleIngredients: simpleMeals[i].simpleIngredients,
+      })),
+    };
+  };
+
   const handleCalculate = () => {
     const { weightKg, heightCm, age, sex, activityLevel, stepsPerDay, goal, adjustment, proteinPerLb, fatPerKg, numMeals, trainingTime, wakeTime } = state;
 
@@ -54,15 +74,8 @@ function App() {
     const dailyDiff = targetCalories - tdee;
     const weightProjection = projectWeight(weightKg, dailyDiff);
 
-    const rawMealPlan = generateMealPlan(macros, numMeals, wakeTime, trainingTime);
-    const simpleMeals = convertToSimplePlan(rawMealPlan.meals);
-    const mealPlan = {
-      ...rawMealPlan,
-      meals: rawMealPlan.meals.map((meal, i) => ({
-        ...meal,
-        simpleIngredients: simpleMeals[i].simpleIngredients,
-      })),
-    };
+    const mealPlanInputs = { numMeals, wakeTime, trainingTime };
+    const mealPlan = buildMealPlan(macros, mealPlanInputs, 0);
 
     setResults({
       macros,
@@ -75,11 +88,26 @@ function App() {
       adjustment,
       weightProjection,
       mealPlan,
+      mealPlanInputs,
     });
 
     setTimeout(() => {
       resultsRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, 100);
+  };
+
+  const handleShuffleMealPlan = () => {
+    setResults(prev => {
+      if (!prev?.macros || !prev?.mealPlanInputs) return prev;
+
+      const nextSeed = (prev.mealPlan?.shuffleSeed || 0) + 1;
+      const mealPlan = buildMealPlan(prev.macros, prev.mealPlanInputs, nextSeed);
+
+      return {
+        ...prev,
+        mealPlan,
+      };
+    });
   };
 
   return (
@@ -89,7 +117,7 @@ function App() {
       <div ref={resultsRef}>
         {results && (
           <>
-            <ResultsSection results={results} weightUnit={state.weightUnit} />
+            <ResultsSection results={results} weightUnit={state.weightUnit} onShuffleMealPlan={handleShuffleMealPlan} />
             <CTASection />
           </>
         )}
