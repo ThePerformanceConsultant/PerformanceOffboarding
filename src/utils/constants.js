@@ -64,6 +64,7 @@ const PROTEIN_FOODS = [
 
 const CARB_FOODS = [
   food('Rolled Oats', 'carb', 'low', 379, 13.2, 67, 6.5, 10.1),
+  food('Weetabix (dry)', 'carb', 'low-medium', 362, 12, 69, 2, 10),
   food('Sweet Potato', 'carb', 'low', 86, 1.6, 20, 0.1, 3),
   food('Brown Rice (cooked)', 'carb', 'low-medium', 123, 2.7, 26, 1, 1.8),
   food('Wholegrain Bread', 'carb', 'low-medium', 247, 10, 41, 4.2, 6),

@@ -45,7 +45,11 @@ function App() {
       mealPlanInputs.numMeals,
       mealPlanInputs.wakeTime,
       mealPlanInputs.trainingTime,
-      shuffleSeed
+      shuffleSeed,
+      {
+        sex: mealPlanInputs.sex,
+        targetCalories: mealPlanInputs.targetCalories,
+      }
     );
 
     const simpleMeals = convertToSimplePlan(rawMealPlan.meals);
@@ -74,7 +78,7 @@ function App() {
     const dailyDiff = targetCalories - tdee;
     const weightProjection = projectWeight(weightKg, dailyDiff);
 
-    const mealPlanInputs = { numMeals, wakeTime, trainingTime };
+    const mealPlanInputs = { numMeals, wakeTime, trainingTime, sex, targetCalories };
     const mealPlan = buildMealPlan(macros, mealPlanInputs, 0);
 
     setResults({

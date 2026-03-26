@@ -8,6 +8,36 @@ const PRIMARY_MACRO_BY_CATEGORY = {
 
 const MACRO_KEYS = ['protein', 'carbs', 'fat'];
 
+const PRE_WORKOUT_CARB_PREFERRED = new Set([
+  'Rolled Oats',
+  'Weetabix (dry)',
+  'Wholegrain Bread',
+  'Sourdough Bread',
+  'Rye Bread',
+  'Muesli (no sugar)',
+  'Oat Bran',
+  'Pita Bread (wholemeal)',
+  'Wrap (wholewheat)',
+  'Wholewheat Pasta (cooked)',
+  'Buckwheat (cooked)',
+  'Barley (cooked)',
+]);
+
+const PRE_WORKOUT_CARB_BANNED_TERMS = [
+  'rice',
+  'lentil',
+  'chickpea',
+  'bean',
+  'peas',
+  'sweetcorn',
+  'corn',
+  'potato',
+];
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
 function getTimeString(hours, minutes) {
   const h = Math.floor(hours);
   const m = Math.round(minutes || (hours % 1) * 60);
@@ -41,26 +71,69 @@ function getCandidates(category, gi = 'any', exclude = []) {
   return FOOD_DATABASE.filter(food => food.category === category && !exclude.includes(food.name));
 }
 
-function scoreFoodForMacro(food, primaryMacro) {
+function filterCarbCandidates(candidates, { isPreTrain, isPostTrain, allowFallback = false }) {
+  let filtered = candidates.filter(food => (food.per100.carbs || 0) >= (isPreTrain ? 18 : isPostTrain ? 20 : 16));
+
+  if (isPreTrain) {
+    const preTrainFriendly = filtered.filter(food => {
+      const name = food.name.toLowerCase();
+      const blocked = PRE_WORKOUT_CARB_BANNED_TERMS.some(term => name.includes(term));
+      const fibre = food.per100.fibre || 0;
+      const carbs = food.per100.carbs || 0;
+      return !blocked && carbs >= 20 && fibre <= 12;
+    });
+
+    if (preTrainFriendly.length > 0) filtered = preTrainFriendly;
+  }
+
+  if (isPostTrain) {
+    const postTrainFriendly = filtered.filter(food => (
+      (food.per100.carbs || 0) >= 22 && (food.per100.fibre || 0) <= 8
+    ));
+    if (postTrainFriendly.length > 0) filtered = postTrainFriendly;
+  }
+
+  if (allowFallback && filtered.length === 0) {
+    return candidates.filter(food => (food.per100.carbs || 0) >= 14);
+  }
+
+  return filtered;
+}
+
+function scoreFoodForMacro(food, primaryMacro, context = {}) {
   const primary = food.per100[primaryMacro] || 0;
   if (primary <= 0) return -Infinity;
 
   const spill = MACRO_KEYS.reduce((sum, macro) => (
     macro === primaryMacro ? sum : sum + (food.per100[macro] || 0)
   ), 0);
-  const fibre = food.per100.fibre || 0;
-  const fibreBonus = primaryMacro === 'carbs' ? fibre * 0.08 : fibre * 0.02;
 
-  return (primary / (spill + 0.6)) + fibreBonus;
+  let score = primary / (spill + 0.8);
+  const fibre = food.per100.fibre || 0;
+
+  if (primaryMacro === 'carbs') {
+    const carbsPer100 = food.per100.carbs || 0;
+    const fibreCeiling = context.isPostTrain ? 6 : 9;
+    const fibrePenalty = Math.max(0, fibre - fibreCeiling) * 0.12;
+    const densityPenalty = Math.max(0, 18 - carbsPer100) * 0.08;
+    const densityBonus = carbsPer100 / 45;
+    const preferredBonus = context.isPreTrain && PRE_WORKOUT_CARB_PREFERRED.has(food.name) ? 0.35 : 0;
+    score += densityBonus + preferredBonus - fibrePenalty - densityPenalty;
+  } else if (primaryMacro === 'fat') {
+    const fibrePenalty = Math.max(0, fibre - 6) * 0.1;
+    score -= fibrePenalty;
+  }
+
+  return score;
 }
 
-function selectCandidatePool(candidates, primaryMacro, limit, random) {
+function selectCandidatePool(candidates, primaryMacro, limit, random, scoringContext = {}) {
   if (candidates.length <= limit) return [...candidates];
 
   const ranked = [...candidates].sort(
-    (a, b) => scoreFoodForMacro(b, primaryMacro) - scoreFoodForMacro(a, primaryMacro)
+    (a, b) => scoreFoodForMacro(b, primaryMacro, scoringContext) - scoreFoodForMacro(a, primaryMacro, scoringContext)
   );
-  const poolWindow = ranked.slice(0, Math.min(ranked.length, Math.max(limit * 3, 12)));
+  const poolWindow = ranked.slice(0, Math.min(ranked.length, Math.max(limit * 3, 14)));
   const selected = [];
   const available = [...poolWindow];
 
@@ -94,7 +167,23 @@ function gramsForMacro(food, targetGrams, macroKey) {
   return Math.round((targetGrams / food.per100[macroKey]) * 100);
 }
 
-function buildMealIngredients(proteinFood, carbFood, fatFood, vegFood, mealTargets, isPostTrain) {
+function getFibreProfile(targetCalories, sex = 'male') {
+  const calories = Math.max(1400, Number(targetCalories) || 0);
+  const minBySex = sex === 'female' ? 22 : 30;
+  const preferredUpperBySex = sex === 'female' ? 28 : 35;
+  const targetByCalories = (calories / 1000) * 11.5;
+  const target = clamp(targetByCalories, minBySex, preferredUpperBySex);
+  const maxByCalories = (calories / 1000) * 14;
+  const max = Math.max(target, maxByCalories, minBySex);
+
+  return {
+    min: +minBySex.toFixed(1),
+    target: +target.toFixed(1),
+    max: +max.toFixed(1),
+  };
+}
+
+function buildMealIngredients(proteinFood, carbFood, fatFood, vegFood, mealTargets, isPostTrain, constraints = {}) {
   const slotGrams = { protein: 0, fat: 0, carb: 0 };
 
   const fixedItems = [];
@@ -107,9 +196,30 @@ function buildMealIngredients(proteinFood, carbFood, fatFood, vegFood, mealTarge
   }
 
   const slots = [
-    { key: 'protein', primaryMacro: 'protein', food: proteinFood, minGrams: 10, minNeeded: 1 },
-    { key: 'fat', primaryMacro: 'fat', food: fatFood, minGrams: 5, minNeeded: 0.5 },
-    { key: 'carb', primaryMacro: 'carbs', food: carbFood, minGrams: 10, minNeeded: 2 },
+    {
+      key: 'protein',
+      primaryMacro: 'protein',
+      food: proteinFood,
+      minGrams: 10,
+      minNeeded: 1,
+      maxGrams: Math.max(0, constraints.proteinMaxGrams ?? (proteinFood?.isShake ? 90 : 300)),
+    },
+    {
+      key: 'fat',
+      primaryMacro: 'fat',
+      food: fatFood,
+      minGrams: 5,
+      minNeeded: 0.5,
+      maxGrams: Math.max(0, constraints.fatMaxGrams ?? 35),
+    },
+    {
+      key: 'carb',
+      primaryMacro: 'carbs',
+      food: carbFood,
+      minGrams: 10,
+      minNeeded: 2,
+      maxGrams: Math.max(0, constraints.carbMaxGrams ?? 320),
+    },
   ];
 
   const totalsFor = (gramsState) => {
@@ -135,13 +245,14 @@ function buildMealIngredients(proteinFood, carbFood, fatFood, vegFood, mealTarge
 
   let running = totalsFor(slotGrams);
   slots.forEach(slot => {
-    if (!slot.food) return;
+    if (!slot.food || slot.maxGrams <= 0) return;
     const needed = mealTargets[slot.primaryMacro] - running[slot.primaryMacro];
     if (needed > slot.minNeeded) {
-      slotGrams[slot.key] = roundPortionGrams(
+      const raw = roundPortionGrams(
         gramsForMacro(slot.food, needed, slot.primaryMacro),
         slot.minGrams
       );
+      slotGrams[slot.key] = Math.min(slot.maxGrams, raw);
       running = totalsFor(slotGrams);
     }
   });
@@ -151,7 +262,7 @@ function buildMealIngredients(proteinFood, carbFood, fatFood, vegFood, mealTarge
     running = totalsFor(slotGrams);
 
     slots.forEach(slot => {
-      if (!slot.food) return;
+      if (!slot.food || slot.maxGrams <= 0) return;
 
       const currentGrams = slotGrams[slot.key] || 0;
       const currentMacros = calcFoodMacros(slot.food, currentGrams);
@@ -162,9 +273,10 @@ function buildMealIngredients(proteinFood, carbFood, fatFood, vegFood, mealTarge
       };
 
       const needed = mealTargets[slot.primaryMacro] - runningWithoutSlot[slot.primaryMacro];
-      const nextGrams = needed <= slot.minNeeded
+      const nextRaw = needed <= slot.minNeeded
         ? 0
         : roundPortionGrams(gramsForMacro(slot.food, needed, slot.primaryMacro), slot.minGrams);
+      const nextGrams = Math.min(slot.maxGrams, nextRaw);
 
       if (nextGrams !== currentGrams) {
         slotGrams[slot.key] = nextGrams;
@@ -174,6 +286,23 @@ function buildMealIngredients(proteinFood, carbFood, fatFood, vegFood, mealTarge
     });
 
     if (!changed) break;
+  }
+
+  const mealFibreCap = Number.isFinite(constraints.mealFibreCap) ? constraints.mealFibreCap : Infinity;
+  if (mealFibreCap < Infinity) {
+    for (let iter = 0; iter < 24; iter++) {
+      running = totalsFor(slotGrams);
+      if (running.fibre <= (mealFibreCap + 0.1)) break;
+
+      const reducible = slots
+        .filter(slot => slot.food && (slotGrams[slot.key] || 0) > 0 && (slot.food.per100.fibre || 0) > 0)
+        .sort((a, b) => (b.food.per100.fibre || 0) - (a.food.per100.fibre || 0));
+
+      const slotToReduce = reducible[0];
+      if (!slotToReduce) break;
+      const decrement = slotToReduce.key === 'carb' ? 10 : 5;
+      slotGrams[slotToReduce.key] = Math.max(0, slotGrams[slotToReduce.key] - decrement);
+    }
   }
 
   const ingredients = [];
@@ -213,7 +342,7 @@ function buildMealIngredients(proteinFood, carbFood, fatFood, vegFood, mealTarge
   };
 }
 
-function mealTightnessScore(totals, targets) {
+function mealTightnessScore(totals, targets, fibrePlan = {}) {
   const proteinError = Math.abs(totals.protein - targets.protein);
   const carbError = Math.abs(totals.carbs - targets.carbs);
   const fatError = Math.abs(totals.fat - targets.fat);
@@ -221,16 +350,27 @@ function mealTightnessScore(totals, targets) {
   const targetCalories = (targets.protein * 4) + (targets.carbs * 4) + (targets.fat * 9);
   const calorieError = Math.abs(totals.calories - targetCalories);
 
-  return (
-    proteinError * 1.25 +
-    carbError * 1.05 +
+  let score = (
+    proteinError * 1.3 +
+    carbError * 1.1 +
     fatError * 1.4 +
-    (calorieError / 28) -
-    (totals.fibre * 0.05)
+    (calorieError / 28)
   );
+
+  if (Number.isFinite(fibrePlan.mealCap) && totals.fibre > fibrePlan.mealCap) {
+    score += (totals.fibre - fibrePlan.mealCap) * 9;
+  }
+  if (Number.isFinite(fibrePlan.mealFloor) && totals.fibre < fibrePlan.mealFloor) {
+    score += (fibrePlan.mealFloor - totals.fibre) * 5;
+  }
+  if (Number.isFinite(fibrePlan.mealTarget)) {
+    score += Math.abs(totals.fibre - fibrePlan.mealTarget) * 0.8;
+  }
+
+  return score;
 }
 
-export function generateMealPlan(macros, numMeals, wakeTime, trainingTime, shuffleSeed = 0) {
+export function generateMealPlan(macros, numMeals, wakeTime, trainingTime, shuffleSeed = 0, options = {}) {
   const seed = (
     (macros.protein.grams * 101) +
     (macros.carbs.grams * 97) +
@@ -239,6 +379,14 @@ export function generateMealPlan(macros, numMeals, wakeTime, trainingTime, shuff
     (shuffleSeed * 11939)
   );
   const random = createSeededRandom(seed);
+
+  const sex = options.sex || 'male';
+  const targetCalories = options.targetCalories || macros.totalCalories || (
+    (macros.protein.grams * 4) + (macros.carbs.grams * 4) + (macros.fat.grams * 9)
+  );
+
+  const fibreProfile = getFibreProfile(targetCalories, sex);
+  const perMealFibreCap = Math.max(6, +(fibreProfile.target * 0.35).toFixed(1));
 
   const wakeMinutes = parseInt(wakeTime.split(':')[0], 10) * 60 + parseInt(wakeTime.split(':')[1], 10);
   const trainMinutes = parseInt(trainingTime.split(':')[0], 10) * 60 + parseInt(trainingTime.split(':')[1], 10);
@@ -326,6 +474,20 @@ export function generateMealPlan(macros, numMeals, wakeTime, trainingTime, shuff
       fat: (macros.fat.grams - dayRunning.fat) / remainingMeals,
     };
 
+    const remainingFibreMin = Math.max(0, fibreProfile.min - dayRunning.fibre);
+    const remainingFibreTarget = Math.max(0, fibreProfile.target - dayRunning.fibre);
+    const remainingFibreMax = Math.max(0, fibreProfile.max - dayRunning.fibre);
+
+    const maxFutureCapacity = perMealFibreCap * Math.max(0, remainingMeals - 1);
+    const mealFibreFloor = Math.max(0, remainingFibreMin - maxFutureCapacity);
+    const baseMealFibreCap = Math.min(perMealFibreCap, remainingFibreMax);
+    const mealFibreCap = Math.max(mealFibreFloor, baseMealFibreCap);
+    const mealFibreTarget = clamp(
+      remainingFibreTarget / remainingMeals,
+      mealFibreFloor,
+      mealFibreCap
+    );
+
     let proteinOptions;
     if (isPostTrain && whey) {
       proteinOptions = [whey];
@@ -335,22 +497,54 @@ export function generateMealPlan(macros, numMeals, wakeTime, trainingTime, shuff
       proteinOptions = selectCandidatePool(source, PRIMARY_MACRO_BY_CATEGORY.protein, 8, random);
     }
 
-    const carbCandidates = getCandidates('carb', gi, []);
-    const carbSource = carbCandidates.length > 0 ? carbCandidates : allCarbs;
-    const carbOptions = selectCandidatePool(carbSource, PRIMARY_MACRO_BY_CATEGORY.carb, 10, random);
+    let carbCandidates = filterCarbCandidates(
+      getCandidates('carb', gi, []),
+      { isPreTrain, isPostTrain }
+    );
+    if (carbCandidates.length === 0) {
+      carbCandidates = filterCarbCandidates(allCarbs, { isPreTrain, isPostTrain, allowFallback: true });
+    }
+    if (carbCandidates.length === 0) carbCandidates = allCarbs;
+    const carbOptions = selectCandidatePool(
+      carbCandidates,
+      PRIMARY_MACRO_BY_CATEGORY.carb,
+      10,
+      random,
+      { isPreTrain, isPostTrain }
+    );
 
     const fatGap = macros.fat.grams - dayRunning.fat;
-    const shouldCatchUpFat = isPostTrain && fatGap > (remainingMeals * 3);
-    const fatOptions = (!isPostTrain || shouldCatchUpFat)
-      ? selectCandidatePool(allFats, PRIMARY_MACRO_BY_CATEGORY.fat, 8, random)
+    const fatNeedPerMeal = fatGap / remainingMeals;
+    const postTrainFatCandidates = allFats.filter(food => (
+      (food.per100.fibre || 0) <= 4 && (food.per100.carbs || 0) <= 12
+    ));
+    const shouldIncludeFat = !isPostTrain || fatNeedPerMeal > 4;
+    const fatCandidateSource = isPostTrain ? postTrainFatCandidates : allFats;
+    const fatOptions = shouldIncludeFat
+      ? selectCandidatePool(fatCandidateSource, PRIMARY_MACRO_BY_CATEGORY.fat, 8, random, { isPostTrain })
       : [null];
 
-    const vegOptions = selectCandidatePool(allVeg, 'carbs', 6, random);
+    const vegCandidateSource = (isPreTrain || isPostTrain)
+      ? allVeg.filter(food => (food.per100.fibre || 0) <= 3.5)
+      : allVeg;
+    const vegOptions = selectCandidatePool(
+      vegCandidateSource.length > 0 ? vegCandidateSource : allVeg,
+      'carbs',
+      6,
+      random
+    );
     const vegFood = vegOptions[Math.floor(random() * vegOptions.length)] || allVeg[0];
 
     let bestMeal = null;
     let bestScore = Infinity;
     let bestProteinName = null;
+
+    const mealConstraints = {
+      proteinMaxGrams: isPostTrain ? 90 : (isPreTrain ? 260 : 300),
+      carbMaxGrams: isPreTrain ? 230 : (isPostTrain ? 260 : 320),
+      fatMaxGrams: isPostTrain ? (shouldIncludeFat ? 20 : 0) : 35,
+      mealFibreCap,
+    };
 
     proteinOptions.forEach(proteinFood => {
       carbOptions.forEach(carbFood => {
@@ -361,10 +555,48 @@ export function generateMealPlan(macros, numMeals, wakeTime, trainingTime, shuff
             fatFood,
             vegFood,
             mealTargets,
-            isPostTrain
+            isPostTrain,
+            mealConstraints
           );
 
-          const score = mealTightnessScore(meal.totals, mealTargets) + (random() * 0.02);
+          let score = mealTightnessScore(
+            meal.totals,
+            mealTargets,
+            {
+              mealCap: mealFibreCap,
+              mealFloor: mealFibreFloor,
+              mealTarget: mealFibreTarget,
+            }
+          ) + (random() * 0.02);
+
+          const projectedFibre = dayRunning.fibre + meal.totals.fibre;
+          const remainingAfterThis = remainingMeals - 1;
+          const maxPossibleAfterThis = projectedFibre + (remainingAfterThis * perMealFibreCap);
+
+          if (projectedFibre > (fibreProfile.max + 0.2)) {
+            score += (projectedFibre - fibreProfile.max) * 12;
+          }
+          if (maxPossibleAfterThis < (fibreProfile.min - 0.2)) {
+            score += (fibreProfile.min - maxPossibleAfterThis) * 12;
+          }
+
+          const maxIngredientGrams = meal.ingredients.reduce(
+            (max, ingredient) => Math.max(max, ingredient.grams),
+            0
+          );
+          const mealTotalGrams = meal.ingredients.reduce(
+            (sum, ingredient) => sum + ingredient.grams,
+            0
+          );
+
+          const ingredientLimit = isPreTrain ? 260 : 320;
+          if (maxIngredientGrams > ingredientLimit) {
+            score += (maxIngredientGrams - ingredientLimit) * 0.4;
+          }
+          if (isPreTrain && mealTotalGrams > 700) {
+            score += (mealTotalGrams - 700) * 0.08;
+          }
+
           if (score < bestScore) {
             bestScore = score;
             bestMeal = meal;
@@ -384,7 +616,8 @@ export function generateMealPlan(macros, numMeals, wakeTime, trainingTime, shuff
         fallbackFat,
         vegFood,
         mealTargets,
-        isPostTrain
+        isPostTrain,
+        mealConstraints
       );
       bestProteinName = fallbackProtein?.name || null;
     }
@@ -418,6 +651,7 @@ export function generateMealPlan(macros, numMeals, wakeTime, trainingTime, shuff
     meals,
     trainingTime: formatTime(trainingTime),
     shuffleSeed,
+    fibreProfile,
   };
 }
 
