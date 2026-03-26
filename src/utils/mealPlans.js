@@ -34,6 +34,31 @@ const PRE_WORKOUT_CARB_BANNED_TERMS = [
   'potato',
 ];
 
+// Factors represent cooked grams produced from 1g raw/dry food.
+const COOKED_TO_RAW_WEIGHT_FACTORS = {
+  'Brown Rice (cooked)': 3.0,
+  'Basmati Rice (cooked)': 3.0,
+  'White Rice (cooked)': 3.0,
+  'Jasmine Rice (cooked)': 3.0,
+  'Quinoa (cooked)': 2.8,
+  'Buckwheat (cooked)': 2.6,
+  'Wholewheat Pasta (cooked)': 2.3,
+  'White Pasta (cooked)': 2.3,
+  'Couscous (cooked)': 2.5,
+  'Bulgur Wheat (cooked)': 2.5,
+  'Barley (cooked)': 2.8,
+  'Red Lentils (cooked)': 2.6,
+  'Chickpeas (cooked)': 2.5,
+  'Black Beans (cooked)': 2.5,
+  'Kidney Beans (cooked)': 2.5,
+  'Cannellini Beans (cooked)': 2.5,
+  'Potatoes (boiled)': 1.1,
+  'New Potatoes (boiled)': 1.1,
+  'Beetroot (cooked)': 1.1,
+  'Soba Noodles (cooked)': 2.2,
+  'Polenta (cooked)': 3.2,
+};
+
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
@@ -160,6 +185,13 @@ function calcFoodMacros(food, portionGrams) {
 function roundPortionGrams(grams, minGrams = 10) {
   if (!Number.isFinite(grams) || grams <= 0) return 0;
   return Math.max(minGrams, Math.round(grams / 5) * 5);
+}
+
+function toRawEquivalentGrams(foodName, basisGrams) {
+  if (!Number.isFinite(basisGrams) || basisGrams <= 0) return 0;
+  const cookedFactor = COOKED_TO_RAW_WEIGHT_FACTORS[foodName] || 1;
+  const rawGrams = basisGrams / cookedFactor;
+  return Math.max(1, Math.round(rawGrams));
 }
 
 function gramsForMacro(food, targetGrams, macroKey) {
@@ -307,10 +339,16 @@ function buildMealIngredients(proteinFood, carbFood, fatFood, vegFood, mealTarge
 
   const ingredients = [];
   const addIngredient = (food, grams) => {
-    const roundedGrams = roundPortionGrams(grams, 5);
-    if (!food || roundedGrams <= 0) return;
-    const macros = calcFoodMacros(food, roundedGrams);
-    ingredients.push({ name: food.name, grams: roundedGrams, ...macros });
+    const basisGrams = roundPortionGrams(grams, 5);
+    if (!food || basisGrams <= 0) return;
+    const macros = calcFoodMacros(food, basisGrams);
+    const rawGrams = toRawEquivalentGrams(food.name, basisGrams);
+    ingredients.push({
+      name: food.name,
+      grams: rawGrams,
+      basisGrams,
+      ...macros,
+    });
   };
 
   addIngredient(proteinFood, slotGrams.protein);
@@ -581,11 +619,11 @@ export function generateMealPlan(macros, numMeals, wakeTime, trainingTime, shuff
           }
 
           const maxIngredientGrams = meal.ingredients.reduce(
-            (max, ingredient) => Math.max(max, ingredient.grams),
+            (max, ingredient) => Math.max(max, ingredient.basisGrams ?? ingredient.grams),
             0
           );
           const mealTotalGrams = meal.ingredients.reduce(
-            (sum, ingredient) => sum + ingredient.grams,
+            (sum, ingredient) => sum + (ingredient.basisGrams ?? ingredient.grams),
             0
           );
 
@@ -663,7 +701,8 @@ export function convertToSimplePlan(meals) {
       if (food) category = food.category;
 
       const portion = HAND_PORTIONS[category] || HAND_PORTIONS.carb;
-      const numPortions = Math.max(0.5, Math.round((ingredient.grams / portion.gramsApprox) * 2) / 2);
+      const portionBasisGrams = ingredient.basisGrams ?? ingredient.grams;
+      const numPortions = Math.max(0.5, Math.round((portionBasisGrams / portion.gramsApprox) * 2) / 2);
 
       return {
         name: ingredient.name,

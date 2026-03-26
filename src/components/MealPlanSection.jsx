@@ -131,7 +131,7 @@ export default function MealPlanSection({ mealPlan, simpleMode }) {
                         <thead>
                           <tr className="text-gray-500 text-xs">
                             <th className="text-left pb-2 font-medium">Ingredient</th>
-                            <th className="text-right pb-2 font-medium">Grams</th>
+                            <th className="text-right pb-2 font-medium">Raw g</th>
                             <th className="text-right pb-2 font-medium">Prot</th>
                             <th className="text-right pb-2 font-medium">Carbs</th>
                             <th className="text-right pb-2 font-medium">Fat</th>
@@ -172,6 +172,9 @@ export default function MealPlanSection({ mealPlan, simpleMode }) {
           ))}
         </div>
       </div>
+      <p className="text-xs text-gray-500 mt-4">
+        All ingredient gram amounts are shown as uncooked/raw weight equivalents.
+      </p>
     </Motion.div>
   );
 }
