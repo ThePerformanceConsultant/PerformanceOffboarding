@@ -142,7 +142,7 @@ function buildMealRolePlan({
     let displayAbsMins = entry.absMins;
     sessionWindows.forEach(({ start, end }) => {
       if (displayAbsMins >= start && displayAbsMins <= end) {
-        displayAbsMins = end + 1;
+        displayAbsMins = end;
       }
     });
     return { ...entry, displayAbsMins };
@@ -255,7 +255,8 @@ function buildMealRolePlan({
       role,
       timeWindowLabel,
       windowRangeLabel,
-      actualTimeLabel: meals[mealIndex].time,
+      displayTimeLabel: format12h(displayAbsMins),
+      plannedTimeLabel: meals[mealIndex].time,
     };
   });
 }
@@ -684,7 +685,12 @@ function DayBar({
 
   // Collect all marker positions for stagger logic
   const allMarkers = [
-    ...meals.map((meal, i) => ({ pct: pctFromAbs(mealMins[i]), label: meal.time, type: 'meal', idx: i })),
+    ...meals.map((meal, i) => ({
+      pct: pctFromAbs(mealMins[i]),
+      label: roleByMealIndex.get(i)?.displayTimeLabel || meal.time,
+      type: 'meal',
+      idx: i,
+    })),
     ...trainingBands.map(band => ({
       pct: band.midpoint,
       label: band.time,
@@ -758,13 +764,14 @@ function DayBar({
         {meals.map((meal, i) => {
           const mp = pctFromAbs(mealMins[i]);
           const staggered = staggerMap.has(`meal-${i}`);
+          const mealLabel = roleByMealIndex.get(i)?.displayTimeLabel || meal.time;
           return (
             <span
               key={`t-${i}`}
               className="absolute text-[10px] text-white font-medium whitespace-nowrap"
               style={{ left: `${mp}%`, transform: 'translateX(-50%)', top: staggered ? '12px' : '2px' }}
             >
-              {meal.time}
+              {mealLabel}
             </span>
           );
         })}
@@ -807,7 +814,8 @@ function MealCard({
   mealIndex,
   timeWindowLabel = null,
   windowRangeLabel = null,
-  actualTimeLabel = null,
+  displayTimeLabel = null,
+  plannedTimeLabel = null,
 }) {
   const s = ROLE_STYLES[role] || ROLE_STYLES.midDay;
   const a = annotation;
@@ -833,7 +841,10 @@ function MealCard({
             <div className="flex items-center gap-2 flex-wrap">
               <span className="flex items-center gap-1 text-gray-400 text-sm shrink-0">
                 <HiClock className="text-xs" />
-                <span className="font-medium">{actualTimeLabel || meal.time}</span>
+                <span className="font-medium">{displayTimeLabel || meal.time}</span>
+                {plannedTimeLabel && displayTimeLabel && plannedTimeLabel !== displayTimeLabel && (
+                  <span className="text-[11px] text-gray-500">(planned {plannedTimeLabel})</span>
+                )}
               </span>
               <span className="text-white font-semibold text-sm truncate">{meal.label}</span>
               {(meal.isPreTrain || meal.isPostTrain) && (
@@ -1121,7 +1132,8 @@ export default function MealTimingSection({ results }) {
       role: rolePlan?.role ?? 'midDay',
       timeWindowLabel: rolePlan?.timeWindowLabel || null,
       windowRangeLabel: rolePlan?.windowRangeLabel || null,
-      actualTimeLabel: rolePlan?.actualTimeLabel || meal.time,
+      displayTimeLabel: rolePlan?.displayTimeLabel || meal.time,
+      plannedTimeLabel: rolePlan?.plannedTimeLabel || meal.time,
     };
   });
 
@@ -1407,7 +1419,8 @@ export default function MealTimingSection({ results }) {
                   mealIndex={mealIndex}
                   timeWindowLabel={event.timeWindowLabel}
                   windowRangeLabel={event.windowRangeLabel}
-                  actualTimeLabel={event.actualTimeLabel}
+                  displayTimeLabel={event.displayTimeLabel}
+                  plannedTimeLabel={event.plannedTimeLabel}
                 />
               );
             })}
