@@ -93,6 +93,7 @@ function App() {
       weightProjection,
       mealPlan,
       mealPlanInputs,
+      weightKg,
     });
 
     setTimeout(() => {

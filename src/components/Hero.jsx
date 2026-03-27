@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import { HiCalculator, HiLightningBolt, HiShieldCheck } from 'react-icons/hi';
 
 export default function Hero() {
@@ -10,13 +10,13 @@ export default function Hero() {
         backgroundSize: '40px 40px',
       }} />
 
-      <motion.div
+      <Motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
         className="relative z-10 text-center max-w-3xl mx-auto"
       >
-        <motion.div
+        <Motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.1 }}
@@ -24,35 +24,35 @@ export default function Hero() {
         >
           <span className="w-2 h-2 bg-gold rounded-full animate-pulse" />
           <span className="text-sm text-gray-300 tracking-wide uppercase">Free Tool</span>
-        </motion.div>
+        </Motion.div>
 
-        <motion.h1
+        <Motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
           className="text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-2"
         >
           Calorie & Macro
-        </motion.h1>
-        <motion.h1
+        </Motion.h1>
+        <Motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
           className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6"
         >
           <span className="italic text-gold-light">Calculator</span>
-        </motion.h1>
+        </Motion.h1>
 
-        <motion.p
+        <Motion.p
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.4 }}
           className="text-gray-400 text-lg sm:text-xl mb-10 max-w-xl mx-auto"
         >
           Science-backed estimates for your daily calories, macros, and a personalised sample meal plan - completely free.
-        </motion.p>
+        </Motion.p>
 
-        <motion.div
+        <Motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.5 }}
@@ -70,9 +70,9 @@ export default function Hero() {
             <HiShieldCheck className="text-gold text-lg" />
             <span>100% Free</span>
           </div>
-        </motion.div>
+        </Motion.div>
 
-        <motion.div
+        <Motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.6 }}
@@ -87,8 +87,8 @@ export default function Hero() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </a>
-        </motion.div>
-      </motion.div>
+        </Motion.div>
+      </Motion.div>
     </section>
   );
 }

@@ -4,6 +4,7 @@ import { HiSwitchHorizontal, HiRefresh } from 'react-icons/hi';
 import TDEEChart from './TDEEChart';
 import WeightProjection from './WeightProjection';
 import MealPlanSection from './MealPlanSection';
+import MealTimingSection from './MealTimingSection';
 
 export default function ResultsSection({ results, weightUnit, onShuffleMealPlan }) {
   const [simpleMode, setSimpleMode] = useState(false);
@@ -104,6 +105,9 @@ export default function ResultsSection({ results, weightUnit, onShuffleMealPlan 
 
         {/* Meal Plan */}
         <MealPlanSection mealPlan={mealPlan} simpleMode={simpleMode} />
+
+        {/* Meal Timing Troubleshooter */}
+        <MealTimingSection results={results} />
       </div>
     </section>
   );

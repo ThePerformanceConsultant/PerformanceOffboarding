@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import { ACTIVITY_LEVELS } from '../utils/constants';
 import { kgToLbs, lbsToKg, cmToFtIn, ftInToCm } from '../utils/calculations';
 import GoalSelector from './GoalSelector';
@@ -30,7 +30,7 @@ export default function InputSection({ state, dispatch, onCalculate }) {
   return (
     <section id="calculator" className="bg-dark py-12 sm:py-20 px-4">
       <div className="max-w-2xl mx-auto">
-        <motion.div
+        <Motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -39,11 +39,11 @@ export default function InputSection({ state, dispatch, onCalculate }) {
         >
           <p className="text-gold text-sm font-semibold tracking-widest uppercase mb-2">Step 1</p>
           <h2 className="text-2xl sm:text-3xl font-bold text-white">Your Details</h2>
-        </motion.div>
+        </Motion.div>
 
         <div className="space-y-8">
           {/* Personal Details */}
-          <motion.div
+          <Motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -165,10 +165,10 @@ export default function InputSection({ state, dispatch, onCalculate }) {
                 </div>
               )}
             </div>
-          </motion.div>
+          </Motion.div>
 
           {/* Activity */}
-          <motion.div
+          <Motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -204,10 +204,10 @@ export default function InputSection({ state, dispatch, onCalculate }) {
               />
               <p className="text-xs text-gray-500 mt-1">Used to estimate NEAT calories (~1 kcal/kg/km walked)</p>
             </div>
-          </motion.div>
+          </Motion.div>
 
           {/* Goal */}
-          <motion.div
+          <Motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -221,10 +221,10 @@ export default function InputSection({ state, dispatch, onCalculate }) {
               adjustment={adjustment}
               setAdjustment={v => dispatch({ type: 'SET', key: 'adjustment', value: v })}
             />
-          </motion.div>
+          </Motion.div>
 
           {/* Macros */}
-          <motion.div
+          <Motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -241,10 +241,10 @@ export default function InputSection({ state, dispatch, onCalculate }) {
               weightLbs={kgToLbs(weightKg)}
               targetCalories={targetCalories}
             />
-          </motion.div>
+          </Motion.div>
 
           {/* Timing & Meals */}
-          <motion.div
+          <Motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -304,10 +304,10 @@ export default function InputSection({ state, dispatch, onCalculate }) {
                 <span>6</span>
               </div>
             </div>
-          </motion.div>
+          </Motion.div>
 
           {/* Calculate Button */}
-          <motion.div
+          <Motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -320,7 +320,7 @@ export default function InputSection({ state, dispatch, onCalculate }) {
             >
               Calculate My Macros
             </button>
-          </motion.div>
+          </Motion.div>
         </div>
       </div>
     </section>

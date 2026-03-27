@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import { HiAcademicCap, HiUserGroup, HiLightningBolt, HiBeaker } from 'react-icons/hi';
 
 const credentials = [
@@ -12,7 +12,7 @@ export default function AboutMe() {
   return (
     <section className="bg-cream py-16 sm:py-24 px-4">
       <div className="max-w-4xl mx-auto">
-        <motion.p
+        <Motion.p
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -20,9 +20,9 @@ export default function AboutMe() {
           className="text-gold-dark text-sm font-semibold tracking-widest uppercase mb-3"
         >
           About the Creator
-        </motion.p>
+        </Motion.p>
 
-        <motion.h2
+        <Motion.h2
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -30,9 +30,9 @@ export default function AboutMe() {
           className="text-3xl sm:text-4xl font-bold text-gray-900 mb-8"
         >
           Dr Will Dyson
-        </motion.h2>
+        </Motion.h2>
 
-        <motion.div
+        <Motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -48,9 +48,9 @@ export default function AboutMe() {
           <p>
             My coaching ethos is simple: <strong className="text-gray-800">sustainability, consistency and effort</strong>. No fads, no extremes - just science-based strategies that fit your real life.
           </p>
-        </motion.div>
+        </Motion.div>
 
-        <motion.div
+        <Motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -61,11 +61,11 @@ export default function AboutMe() {
             "I built this calculator so you can get clarity on your nutrition - no guesswork, no gatekeeping. If you want to take it further, I'm here to help."
           </p>
           <p className="text-gold-dark font-semibold mt-2 text-sm">- Dr Will Dyson</p>
-        </motion.div>
+        </Motion.div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {credentials.map((cred, i) => (
-            <motion.div
+            <Motion.div
               key={cred.label}
               initial={{ opacity: 0, scale: 0.8 }}
               whileInView={{ opacity: 1, scale: 1 }}
@@ -75,7 +75,7 @@ export default function AboutMe() {
             >
               <cred.icon className="text-gold text-lg flex-shrink-0" />
               <span>{cred.label}</span>
-            </motion.div>
+            </Motion.div>
           ))}
         </div>
       </div>

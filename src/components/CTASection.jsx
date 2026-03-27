@@ -1,11 +1,11 @@
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import { HiChat } from 'react-icons/hi';
 import { WHATSAPP_LINK } from '../utils/constants';
 
 export default function CTASection() {
   return (
     <section className="bg-cream py-12 sm:py-16 px-4">
-      <motion.div
+      <Motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
@@ -33,7 +33,7 @@ export default function CTASection() {
         <p className="text-gray-400 text-xs mt-4">
           No pressure, no obligation - just a conversation.
         </p>
-      </motion.div>
+      </Motion.div>
     </section>
   );
 }

@@ -1,7 +1,24 @@
-import { motion } from 'framer-motion';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, Legend } from 'recharts';
+import { motion as Motion } from 'framer-motion';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
-export default function TDEEChart({ bmr, activityCalories, stepCalories, goalAdjustment, targetCalories, goal }) {
+function EnergyTooltip({ active, payload }) {
+  if (active && payload?.length) {
+    return (
+      <div className="bg-dark-card border border-dark-border rounded-lg p-3 shadow-lg">
+        {payload.map((entry) => (
+          <div key={entry.name} className="flex items-center gap-2 text-sm">
+            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: entry.fill || entry.color }} />
+            <span className="text-gray-400">{entry.name}:</span>
+            <span className="text-white font-medium">{entry.value} kcal</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return null;
+}
+
+export default function TDEEChart({ bmr, activityCalories, stepCalories, targetCalories, goal }) {
   const tdee = bmr + activityCalories + stepCalories;
   const adjustmentAmount = targetCalories - tdee;
 
@@ -25,25 +42,8 @@ export default function TDEEChart({ bmr, activityCalories, stepCalories, goalAdj
     Surplus: '#22c55e',
   };
 
-  const CustomTooltip = ({ active, payload }) => {
-    if (active && payload?.length) {
-      return (
-        <div className="bg-dark-card border border-dark-border rounded-lg p-3 shadow-lg">
-          {payload.map((entry) => (
-            <div key={entry.name} className="flex items-center gap-2 text-sm">
-              <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: entry.fill || entry.color }} />
-              <span className="text-gray-400">{entry.name}:</span>
-              <span className="text-white font-medium">{entry.value} kcal</span>
-            </div>
-          ))}
-        </div>
-      );
-    }
-    return null;
-  };
-
   return (
-    <motion.div
+    <Motion.div
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
@@ -57,7 +57,7 @@ export default function TDEEChart({ bmr, activityCalories, stepCalories, goalAdj
           <BarChart data={data} layout="vertical" margin={{ left: 0, right: 20 }}>
             <XAxis type="number" tick={{ fill: '#9ca3af', fontSize: 12 }} axisLine={false} tickLine={false} />
             <YAxis type="category" dataKey="name" hide />
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={<EnergyTooltip />} cursor={false} />
             <Legend
               wrapperStyle={{ fontSize: 12, color: '#9ca3af' }}
               iconType="square"
@@ -70,6 +70,6 @@ export default function TDEEChart({ bmr, activityCalories, stepCalories, goalAdj
           </BarChart>
         </ResponsiveContainer>
       </div>
-    </motion.div>
+    </Motion.div>
   );
 }

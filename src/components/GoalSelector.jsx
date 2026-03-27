@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import { HiTrendingDown, HiMinusCircle, HiTrendingUp } from 'react-icons/hi';
 import InfoPopup from './InfoPopup';
 
@@ -25,7 +25,6 @@ const goals = [
 
 export default function GoalSelector({ goal, setGoal, adjustment, setAdjustment }) {
   const isFatLoss = goal === 'fat-loss';
-  const isSurplus = goal === 'muscle-growth';
 
   return (
     <div className="space-y-6">
@@ -33,7 +32,7 @@ export default function GoalSelector({ goal, setGoal, adjustment, setAdjustment 
         <label className="block text-sm font-medium text-gray-300 mb-3">Your Goal</label>
         <div className="grid grid-cols-3 gap-3">
           {goals.map((g, i) => (
-            <motion.button
+            <Motion.button
               key={g.id}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -54,13 +53,13 @@ export default function GoalSelector({ goal, setGoal, adjustment, setAdjustment 
               <g.icon className="text-2xl" />
               <span className="text-sm font-medium">{g.label}</span>
               <span className="text-xs opacity-70 hidden sm:block">{g.description}</span>
-            </motion.button>
+            </Motion.button>
           ))}
         </div>
       </div>
 
       {goal !== 'maintenance' && (
-        <motion.div
+        <Motion.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
           transition={{ duration: 0.3 }}
@@ -100,7 +99,7 @@ export default function GoalSelector({ goal, setGoal, adjustment, setAdjustment 
             <span>{isFatLoss ? 'Aggressive' : 'Conservative'}</span>
             <span>{isFatLoss ? 'Conservative' : 'Aggressive'}</span>
           </div>
-        </motion.div>
+        </Motion.div>
       )}
     </div>
   );

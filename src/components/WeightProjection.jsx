@@ -1,7 +1,19 @@
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine } from 'recharts';
 
-export default function WeightProjection({ data, goal, weightUnit }) {
+function WeightTooltip({ active, payload, unit }) {
+  if (active && payload?.length) {
+    return (
+      <div className="bg-dark-card border border-dark-border rounded-lg p-3 shadow-lg">
+        <p className="text-gray-400 text-xs">Week {payload[0].payload.week}</p>
+        <p className="text-white font-medium">{payload[0].value} {unit}</p>
+      </div>
+    );
+  }
+  return null;
+}
+
+export default function WeightProjection({ data, weightUnit }) {
   const displayData = data.map(d => ({
     ...d,
     weight: weightUnit === 'lbs' ? +(d.weight * 2.20462).toFixed(1) : d.weight,
@@ -13,20 +25,8 @@ export default function WeightProjection({ data, goal, weightUnit }) {
   const change = +(endWeight - startWeight).toFixed(1);
   const changeText = change > 0 ? `+${change}` : `${change}`;
 
-  const CustomTooltip = ({ active, payload }) => {
-    if (active && payload?.length) {
-      return (
-        <div className="bg-dark-card border border-dark-border rounded-lg p-3 shadow-lg">
-          <p className="text-gray-400 text-xs">Week {payload[0].payload.week}</p>
-          <p className="text-white font-medium">{payload[0].value} {unit}</p>
-        </div>
-      );
-    }
-    return null;
-  };
-
   return (
-    <motion.div
+    <Motion.div
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
@@ -61,7 +61,7 @@ export default function WeightProjection({ data, goal, weightUnit }) {
               domain={['auto', 'auto']}
               label={{ value: unit, angle: -90, position: 'insideLeft', fill: '#6b7280', fontSize: 11 }}
             />
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={<WeightTooltip unit={unit} />} />
             <ReferenceLine y={startWeight} stroke="#3a3a3a" strokeDasharray="5 5" />
             <Line
               type="monotone"
@@ -74,6 +74,6 @@ export default function WeightProjection({ data, goal, weightUnit }) {
           </LineChart>
         </ResponsiveContainer>
       </div>
-    </motion.div>
+    </Motion.div>
   );
 }
