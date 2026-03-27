@@ -16,6 +16,7 @@ const ERGOGENIC_SUPPLEMENTS = [
     name: 'Creatine Monohydrate',
     icon: '💥',
     tagline: 'Power and repeat sprint support',
+    mechanism: 'Increases phosphocreatine availability in muscle, so ATP can be regenerated faster during repeated high-power efforts.',
     who: [
       'Strength and power athletes',
       'Team sports with repeated high-intensity efforts',
@@ -27,6 +28,12 @@ const ERGOGENIC_SUPPLEMENTS = [
       'Maintenance: 3-5 g/day',
       'Optional: pair with protein + carbs to support uptake',
     ],
+    timingNotes: [
+      'No strict clock-time requirement once saturated',
+      'Take at a consistent time daily to improve adherence',
+    ],
+    responseWindow: 'Meaningful performance effects appear after muscle stores are elevated; loading accelerates this process.',
+    dailyUseRule: 'Creatine is a saturation supplement: take it every day, including rest days, to keep stores topped up.',
     impact: [
       'Better short, repeated high-intensity output',
       'Helps strength and lean mass gains during training blocks',
@@ -41,6 +48,7 @@ const ERGOGENIC_SUPPLEMENTS = [
     name: 'Caffeine',
     icon: '☕',
     tagline: 'Focus, effort, and race-day sharpness',
+    mechanism: 'Antagonises adenosine receptors in the central nervous system, reducing perceived effort and supporting alertness/drive.',
     who: [
       'Endurance events and time-trials',
       'Intermittent sport and repeated sprint tasks',
@@ -52,6 +60,11 @@ const ERGOGENIC_SUPPLEMENTS = [
       'Lower dose option: 100-300 mg before or during endurance work',
       'During-event use often pairs well with carbohydrate intake',
     ],
+    timingNotes: [
+      'Acute effect strategy: target timing around session/competition',
+      'For long events, small top-ups can help maintain effect',
+    ],
+    responseWindow: 'Most athletes feel peak effect around 30-90 minutes after ingestion, depending on form and gut tolerance.',
     impact: [
       'Endurance and time-trial improvements are well supported',
       'Can improve repeated sprint and high-intensity task output',
@@ -67,6 +80,7 @@ const ERGOGENIC_SUPPLEMENTS = [
     name: 'Beta-Alanine',
     icon: '🔥',
     tagline: 'High-intensity buffering support',
+    mechanism: 'Raises intramuscular carnosine concentration, improving hydrogen ion buffering during hard glycolytic efforts.',
     who: [
       'Athletes doing repeated hard intervals',
       'Sports with sustained high intensity (about 30 s to 10 min)',
@@ -77,6 +91,12 @@ const ERGOGENIC_SUPPLEMENTS = [
       'Split into small doses (about 0.8-1.6 g every 3-4 h)',
       'Run for about 10-12 weeks before key events',
     ],
+    timingNotes: [
+      'Timing around training is less important than total daily dose',
+      'Divide doses to reduce paraesthesia and improve compliance',
+    ],
+    responseWindow: 'Benefits accrue gradually over weeks as muscle carnosine rises; this is not a same-day performance tool.',
+    dailyUseRule: 'Beta-alanine is a saturation supplement: daily intake is required, including non-training days.',
     impact: [
       'Small but meaningful gains are possible in the right events',
       'Most useful where repeated hard efforts are a limiter',
@@ -92,6 +112,7 @@ const ERGOGENIC_SUPPLEMENTS = [
     name: 'Sodium Bicarbonate',
     icon: '🧪',
     tagline: 'Acid buffering for severe efforts',
+    mechanism: 'Elevates extracellular bicarbonate and pH, increasing blood buffering and supporting high rates of glycolytic work.',
     who: [
       'Athletes in short, very hard events around ~1 minute',
       'Sports with hard repeat bouts where acidity is limiting output',
@@ -102,6 +123,11 @@ const ERGOGENIC_SUPPLEMENTS = [
       'Alternative: split smaller doses over 30-180 min',
       'Alternative: serial loading across 2-4 days',
     ],
+    timingNotes: [
+      'Individualize timing using training trials to reduce GI risk',
+      'Split-dose and with-food strategies can improve tolerance',
+    ],
+    responseWindow: 'Performance effect is session-specific and depends heavily on gastrointestinal tolerance and timing.',
     impact: [
       'Around ~2% performance gains are possible in suitable efforts',
       'Benefit drops as effort duration extends beyond ~10 minutes',
@@ -117,6 +143,7 @@ const ERGOGENIC_SUPPLEMENTS = [
     name: 'Dietary Nitrate',
     icon: '🥬',
     tagline: 'Efficiency and oxygen-use support',
+    mechanism: 'Provides substrate for nitrate-nitrite-nitric oxide pathways, which can improve muscle efficiency and vascular responses.',
     who: [
       'Endurance athletes and team-sport athletes',
       'Events around 12-40 min where type II fibre support may help',
@@ -127,6 +154,11 @@ const ERGOGENIC_SUPPLEMENTS = [
       'Can also be used across multi-day blocks (>3 days)',
       'Food sources include beetroot and leafy green vegetables',
     ],
+    timingNotes: [
+      'Acute and short loading strategies can both be useful',
+      'Consistency of dose and form matters for reproducible effects',
+    ],
+    responseWindow: 'Useful effects are often seen with pre-event dosing 2-3 h before work and can be reinforced in short loading blocks.',
     impact: [
       'Can improve time-to-exhaustion and some time-trial outcomes',
       'Can support intermittent high-intensity output in the right setting',
@@ -199,6 +231,11 @@ function SupplementCard({ item, isOpen, onToggle }) {
                 {item.how}
               </div>
 
+              <div className="rounded-lg border border-indigo-500/25 bg-indigo-500/8 p-3">
+                <p className="text-xs font-semibold text-indigo-300 mb-1.5">Scientific Mechanism (Brief)</p>
+                <p className="text-xs text-gray-200 leading-relaxed">{item.mechanism}</p>
+              </div>
+
               <div>
                 <p className="text-xs font-semibold text-blue-300 mb-1.5">Best Fit</p>
                 <div className="flex flex-wrap gap-1.5">
@@ -208,6 +245,31 @@ function SupplementCard({ item, isOpen, onToggle }) {
                     </span>
                   ))}
                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="rounded-lg border border-cyan-500/25 bg-cyan-500/8 p-3">
+                  <p className="text-xs font-semibold text-cyan-300 mb-1.5">Timing and Onset</p>
+                  <div className="space-y-1">
+                    {item.timingNotes.map((line, idx) => (
+                      <p key={idx} className="text-xs text-gray-200">- {line}</p>
+                    ))}
+                  </div>
+                  <p className="text-xs text-cyan-100/90 mt-2 leading-relaxed">{item.responseWindow}</p>
+                </div>
+                {item.dailyUseRule ? (
+                  <div className="rounded-lg border border-gold/35 bg-gold/12 p-3">
+                    <p className="text-xs font-semibold text-gold mb-1.5">Daily Saturation Reminder</p>
+                    <p className="text-xs text-gray-100 leading-relaxed">{item.dailyUseRule}</p>
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-slate-500/25 bg-slate-500/8 p-3">
+                    <p className="text-xs font-semibold text-slate-200 mb-1.5">Use Pattern</p>
+                    <p className="text-xs text-gray-200 leading-relaxed">
+                      Primarily an acute or session-targeted strategy. Use trial runs in training to lock in dose, timing, and tolerance.
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -328,6 +390,20 @@ export default function SupplementationSection() {
               transition={{ duration: 0.2 }}
               className="space-y-3"
             >
+              <div className="rounded-lg border border-indigo-400/25 bg-indigo-500/10 p-3">
+                <p className="text-xs text-indigo-200 font-semibold mb-1">Scientific Mechanisms (Quick Overview)</p>
+                <p className="text-xs text-gray-200 leading-relaxed">
+                  These recommendations are built on five primary mechanisms: phosphocreatine restoration (creatine), central adenosine blockade (caffeine), intramuscular buffering via carnosine (beta-alanine), extracellular buffering (bicarbonate), and nitric oxide pathway support (dietary nitrate).
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-gold/30 bg-gold/10 p-3">
+                <p className="text-xs text-gold font-semibold mb-1">Daily Saturation Rule</p>
+                <p className="text-xs text-gray-200 leading-relaxed">
+                  Creatine and beta-alanine are saturation products. They must be taken daily, including rest days, to maintain effective muscle levels.
+                </p>
+              </div>
+
               {ERGOGENIC_SUPPLEMENTS.map((supp) => (
                 <SupplementCard
                   key={supp.id}
