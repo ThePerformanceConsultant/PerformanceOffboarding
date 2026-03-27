@@ -6,9 +6,9 @@ import {
   HiSparkles, HiRefresh,
 } from 'react-icons/hi';
 
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 // TIME UTILITIES
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 
 // Handles both "HH:MM" (24h) and "H:MM AM/PM" (12h)
 function parseMins(str) {
@@ -61,9 +61,9 @@ function toAbsoluteMinutes(timeStr, dayStartMins, options = {}) {
   return mins;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 // ROLE COLOURS
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 const ROLE_STYLES = {
   morning:         { border: 'border-blue-500/30',    bg: 'bg-blue-500/5',    dot: 'bg-blue-400 border-blue-400',    text: 'text-blue-400',    badge: 'bg-blue-500/20 text-blue-300'    },
   midDay:          { border: 'border-slate-500/25',   bg: 'bg-slate-800/30',  dot: 'bg-slate-500 border-slate-400',  text: 'text-slate-300',   badge: 'bg-slate-500/20 text-slate-300'  },
@@ -75,22 +75,22 @@ const ROLE_STYLES = {
   preSleep:        { border: 'border-purple-500/35',  bg: 'bg-purple-500/5',  dot: 'bg-purple-400 border-purple-400',text: 'text-purple-400',  badge: 'bg-purple-500/20 text-purple-300'},
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 // ANNOTATION CONTENT (ISSN-backed)
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 const ANNOTATIONS = {
   morning: {
     focusLabel: 'Metabolic Activation',
     focusDetail: 'Liver Glycogen Restock + Day-Opening MPS Signal',
     icon: '🌅',
     justification:
-      'After an overnight fast, hepatic glycogen depletes by ~50% (Coyle et al., 1985). A morning protein dose (0.25–0.4 g/kg) re-establishes muscle protein synthesis signalling. ISSN position (Kerksick et al., 2017) recommends distributing protein across ≥4 meals every 3–4 h as the primary driver of 24-hour net protein balance.',
-    priorities: ['20–40 g quality protein', 'Moderate complex carbohydrates', 'Some dietary fibre', 'Generous hydration'],
+      'After an overnight fast, hepatic glycogen depletes by ~50% (Coyle et al., 1985). A morning protein dose (0.25-0.4 g/kg) re-establishes muscle protein synthesis signalling. ISSN position (Kerksick et al., 2017) recommends distributing protein across 4 meals every 3-4 h as the primary driver of 24-hour net protein balance.',
+    priorities: ['20-40 g quality protein', 'Moderate complex carbohydrates', 'Some dietary fibre', 'Generous hydration'],
     doItems: [
-      'Include 20–40 g high-quality protein -eggs, Greek yoghurt, protein shake',
+      'Include 20-40 g high-quality protein - eggs, Greek yoghurt, protein shake',
       'Add moderate carbohydrates to restore overnight hepatic glycogen',
-      'Stay well hydrated -you wake mildly dehydrated after 7–8 h sleep',
-      'Allow 2–3 h digestion before intense training if applicable',
+      'Stay well hydrated - you wake mildly dehydrated after 7-8 h sleep',
+      'Allow 2-3 h digestion before intense training if applicable',
     ],
     dontItems: [
       'Routinely skipping this feeding if it makes daily protein or carbohydrate targets harder to hit',
@@ -98,7 +98,7 @@ const ANNOTATIONS = {
       'Load up on fibre if training within 90 minutes',
     ],
     exampleFoods: ['Rolled oats + whey protein + berries', 'Scrambled eggs + wholegrain toast + orange juice', 'Greek yoghurt + banana + granola', 'Protein smoothie + oat-based bar'],
-    digestNote: 'Solid meals: 2–3 h. Liquid shakes: 30–45 min. Opt for lighter foods if training is approaching.',
+    digestNote: 'Solid meals: 2-3 h. Liquid shakes: 30-45 min. Opt for lighter foods if training is approaching.',
     source: 'Kerksick et al. (2017) ISSN Position Stand; Coyle et al. (1985) J Appl Physiol',
   },
 
@@ -107,23 +107,23 @@ const ANNOTATIONS = {
     focusDetail: 'Blood Glucose Maintenance + Glycogen Support',
     icon: '⚡',
     justification:
-      'Consuming carbohydrate in the 1–4 h pre-exercise window can support liver and muscle glycogen availability and improve performance in many endurance and mixed training settings. Keeping fat and fibre lower can reduce GI discomfort risk. If using solid food, 60–90 min pre-session is often practical; liquid options can work closer to training.',
-    priorities: ['Low-to-medium GI carbohydrates', '20–30 g lean protein', 'Minimal fat & fibre', 'Light hydration'],
+      'Consuming carbohydrate in the 1-4 h pre-exercise window can support liver and muscle glycogen availability and improve performance in many endurance and mixed training settings. Keeping fat and fibre lower can reduce GI discomfort risk. If using solid food, 60-90 min pre-session is often practical; liquid options can work closer to training.',
+    priorities: ['Low-to-medium GI carbohydrates', '20-30 g lean protein', 'Minimal fat & fibre', 'Light hydration'],
     doItems: [
-      'Eat 60–90 min before training for solid meals',
-      'Prioritise low-to-medium GI carbs -oats, sweet potato, wholegrain bread',
-      'Include 20–30 g lean protein to reduce muscle protein breakdown during training',
-      'Sip 400–600 ml water in the 2 h before exercise',
+      'Eat 60-90 min before training for solid meals',
+      'Prioritise low-to-medium GI carbs - oats, sweet potato, wholegrain bread',
+      'Include 20-30 g lean protein to reduce muscle protein breakdown during training',
+      'Sip 400-600 ml water in the 2 h before exercise',
       'A banana 30 min before is a reliable, fast-digesting carb source if needed',
     ],
     dontItems: [
-      'High-fat foods -slow gastric emptying, blunting blood glucose delivery',
-      'High-fibre foods -risk of GI cramping and urgency mid-session',
-      'Alcohol -impairs glycogen synthesis and reaction time even in small amounts',
+      'High-fat foods - slow gastric emptying, blunting blood glucose delivery',
+      'High-fibre foods - risk of GI cramping and urgency mid-session',
+      'Alcohol - impairs glycogen synthesis and reaction time even in small amounts',
       'Going fully fasted into moderate-high intensity sessions unless this is a deliberate and periodised strategy',
     ],
     exampleFoods: ['Oats + milk + banana', 'Wholegrain bread + sliced turkey', 'Rice cakes + honey + protein shake (small)', 'Sweet potato + chicken breast (smaller portion)'],
-    digestNote: 'Solid meals: 60–90 min. Liquid meals or shakes: 30–45 min. If prone to GI issues, eat earlier and keep portion small.',
+    digestNote: 'Solid meals: 60-90 min. Liquid meals or shakes: 30-45 min. If prone to GI issues, eat earlier and keep portion small.',
     source: 'Kerksick et al. (2017) ISSN; Hawley & Burke (1997) Sports Med; Moseley et al. (2003) IJSNEM',
   },
 
@@ -132,20 +132,20 @@ const ANNOTATIONS = {
     focusDetail: 'Muscle Protein Synthesis + Glycogen Resynthesis',
     icon: '💪',
     justification:
-      'ISSN supports 20–40 g high-quality protein (0.25–0.4 g/kg) in the early recovery window (roughly 0–2 h post-exercise), especially if pre-exercise feeding was limited. Carbohydrate co-ingestion supports glycogen resynthesis, with higher hourly carbohydrate rates becoming more important when the next session is soon.',
-    priorities: ['20–40 g fast protein (whey preferred)', 'Moderate–high GI carbohydrates', 'Minimal fat initially', 'Electrolytes + fluids'],
+      'ISSN supports 20-40 g high-quality protein (0.25-0.4 g/kg) in the early recovery window (roughly 0-2 h post-exercise), especially if pre-exercise feeding was limited. Carbohydrate co-ingestion supports glycogen resynthesis, with higher hourly carbohydrate rates becoming more important when the next session is soon.',
+    priorities: ['20-40 g fast protein (whey preferred)', 'Moderate-high GI carbohydrates', 'Minimal fat initially', 'Electrolytes + fluids'],
     doItems: [
-      'Target 20–40 g high-quality protein within 2 h -whey is fastest-absorbing acutely',
-      'Add 0.5–1 g/kg body weight carbohydrates to accelerate glycogen synthesis',
-      'Eat within 30–60 min for optimal recovery -do not skip this window',
-      'Replenish fluids: 1.25–1.5 L per kg of body weight lost during exercise',
-      'Moderate-to-high GI carbs are appropriate here -white rice, banana, honey',
+      'Target 20-40 g high-quality protein within 2 h - whey is fastest-absorbing acutely',
+      'Add 0.5-1 g/kg body weight carbohydrates to accelerate glycogen synthesis',
+      'Eat within 30-60 min for optimal recovery - do not skip this window',
+      'Replenish fluids: 1.25-1.5 L per kg of body weight lost during exercise',
+      'Moderate-to-high GI carbs are appropriate here - white rice, banana, honey',
     ],
     dontItems: [
       'If your pre-training meal was distant, avoid delaying intake for several hours after training',
-      'Large amounts of fat -slows amino acid and glucose delivery to muscle',
-      'Alcohol -suppresses MPS by up to 24% and impairs overnight glycogen synthesis (Parr et al., 2014)',
-      'Excessive fibre -not needed and slows gastric emptying at this point',
+      'Large amounts of fat - slows amino acid and glucose delivery to muscle',
+      'Alcohol - suppresses MPS by up to 24% and impairs overnight glycogen synthesis (Parr et al., 2014)',
+      'Excessive fibre - not needed and slows gastric emptying at this point',
     ],
     exampleFoods: ['Whey shake + banana', 'Chicken breast + white rice + steamed veg', 'Tuna + white bread', 'Protein yoghurt + fruit + honey', 'Cottage cheese + rice cakes'],
     digestNote: 'Prioritise fast-digesting options within the first 60 min. A full meal can follow within 2 h if appetite is low immediately post-session.',
@@ -154,28 +154,47 @@ const ANNOTATIONS = {
 
   rapidRecovery: {
     focusLabel: 'RAPID Recovery',
-    focusDetail: 'Emergency Glycogen Restock -< 4 h Inter-Session Window',
+    focusDetail: 'Emergency Glycogen Restock - < 4 h Inter-Session Window',
     icon: '🚨',
     justification:
-      'When < 4 h separates sessions, ISSN recommends prioritising rapid carbohydrate refeeding (about 1.0–1.2 g/kg/h), generally favouring faster-digesting options. Adding protein (about 0.2–0.4 g/kg/h) can help when carbohydrate intake is below target. Early feeding matters most when turnaround time is short.',
-    priorities: ['High-GI carbohydrates IMMEDIATELY (≥70 GI)', '20–30 g fast protein', 'Liquid or semi-liquid format', 'Aggressive hydration + electrolytes'],
+      'When < 4 h separates sessions, ISSN recommends prioritising rapid carbohydrate refeeding (about 1.0-1.2 g/kg/h), generally favouring faster-digesting options. Adding protein (about 0.2-0.4 g/kg/h) can help when carbohydrate intake is below target. Early feeding matters most when turnaround time is short.',
+    priorities: ['High-GI carbohydrates IMMEDIATELY (>=70 GI)', '20-30 g fast protein', 'Liquid or semi-liquid format', 'Aggressive hydration + electrolytes'],
     doItems: [
-      'Begin refuelling as soon as practical after session 1',
-      'Target 1.0–1.2 g/kg body weight of high-GI carbs within the first 60–90 min',
-      'Prefer liquid or semi-liquid nutrition -faster gastric clearance before session 2',
-      'Include 20–30 g fast-absorbing protein (whey, chicken) alongside carbs',
-      'Consider caffeine only if needed and tolerated, and avoid late-day dosing that could impair sleep',
-      'Replenish 500–750 ml fluid per hour of prior training',
+      'Start refuelling immediately after session 1 - do not wait for hunger',
+      'If 30-60 min is available: target 1.0-1.2 g/kg high-GI carbs straight away from dense sources',
+      'If <30 min or blocks are effectively back-to-back: prioritise intra-workout CHO drink delivery',
+      'Use mostly liquid/very dense carbs to minimise gut load before session 2',
+      'Include 20-30 g fast protein only if GI comfort and timing allow',
+      'Replenish 500-750 ml fluid per hour of prior training, plus sodium',
     ],
     dontItems: [
       'Long delays before refuelling when sessions are close together',
-      'High-fat meal -severely slows gastric emptying and glucose delivery',
-      'High-fibre foods -GI distress risk heading into the next session',
-      'Large solid meal -prioritise liquid CHO density over volume',
-      'Alcohol -inhibits glycogen synthesis at any amount',
+      'High-fat meal - severely slows gastric emptying and glucose delivery',
+      'High-fibre foods - GI distress risk heading into the next session',
+      'Large solid meal - prioritise liquid CHO density over volume',
+      'Alcohol - inhibits glycogen synthesis at any amount',
     ],
-    exampleFoods: ['Banana + whey protein shake', 'Chocolate milk -fast and practical', 'Rice cakes + honey + protein shake', 'Sports drink + protein bar', 'White rice + grilled chicken (small, fast)'],
-    digestNote: 'Liquid/semi-liquid nutrition clears the stomach in 30–60 min. Allow 45–60 min before session 2 after a small solid meal.',
+    exampleFoodColumns: [
+      {
+        title: 'If 30-60 min is available',
+        items: [
+          'Jaffa cakes, jelly sweets, rice cakes + jam',
+          'Sports drink + carb gel',
+          'Fruit juice + dextrose/carb powder',
+          'Optional: 20-30 g whey if tolerated',
+        ],
+      },
+      {
+        title: 'If <30 min or essentially continuous',
+        items: [
+          'Intra-workout CHO drink as priority',
+          'Target ~30-60 g carbs/h (up to ~90 g/h if gut-trained)',
+          'Electrolyte + carb mix from warm-up through session 2',
+          'Keep solids minimal unless tolerated',
+        ],
+      },
+    ],
+    digestNote: 'Liquid/semi-liquid nutrition clears the stomach in 30-60 min. Allow 45-60 min before session 2 after a small solid meal.',
     source: 'Kerksick et al. (2017) ISSN; Ivy et al. (1988) Int J Sports Med; Jentjens & Jeukendrup (2003) Sports Med',
   },
 
@@ -185,22 +204,22 @@ const ANNOTATIONS = {
     icon: '🔁',
     justification:
       'With 4+ h between sessions, near-complete glycogen resynthesis is achievable if carbohydrate intake is sufficient. Bussau et al. (2002) showed a single day of high CHO intake (~10 g/kg) can nearly double resting muscle glycogen. This window supports a full balanced meal with protein for MPS, generous carbohydrates for glycogen, and moderate fat for satiety.',
-    priorities: ['Complete balanced meal', '30–50 g quality protein', 'Generous carbohydrates (1 g/kg+)', 'Moderate fat acceptable'],
+    priorities: ['Complete balanced meal', '30-50 g quality protein', 'Generous carbohydrates (1 g/kg+)', 'Moderate fat acceptable'],
     doItems: [
-      'Eat a complete, balanced meal -protein, carbs, vegetables, some fat',
+      'Eat a complete, balanced meal - protein, carbs, vegetables, some fat',
       'Target at least 1 g/kg body weight of carbohydrates across this recovery period',
-      '30–50 g quality protein to advance MPS between both sessions',
-      'Include vegetables for potassium, magnesium and B-vitamins -all active in muscle function',
+      '30-50 g quality protein to advance MPS between both sessions',
+      'Include vegetables for potassium, magnesium and B-vitamins - all active in muscle function',
       'Reduce meal size in the 90 min approaching session 2',
     ],
     dontItems: [
-      'High-fat meal within 90 min of session 2 -slows gastric emptying',
-      'Ignoring carbohydrate needs -CHO stores are partially depleted from session 1',
-      'Eating only protein -carbohydrates drive repeat performance, not protein alone',
-      'Excessive calories -more is not more here; quality and timing matter most',
+      'High-fat meal within 90 min of session 2 - slows gastric emptying',
+      'Ignoring carbohydrate needs - CHO stores are partially depleted from session 1',
+      'Eating only protein - carbohydrates drive repeat performance, not protein alone',
+      'Excessive calories - more is not more here; quality and timing matter most',
     ],
     exampleFoods: ['Salmon + basmati rice + green salad', 'Chicken breast + sweet potato + roasted veg', 'Beef mince pasta + tomato sauce', 'Prawn stir-fry + jasmine rice'],
-    digestNote: 'Allow 90 min+ before session 2. Main recovery meal 2–3 h out; optional light snack 60–90 min before session 2 if needed.',
+    digestNote: 'Allow 90 min+ before session 2. Main recovery meal 2-3 h out; optional light snack 60-90 min before session 2 if needed.',
     source: 'Kerksick et al. (2017) ISSN; Bussau et al. (2002) Eur J Appl Physiol; Jentjens & Jeukendrup (2003) Sports Med',
   },
 
@@ -209,18 +228,18 @@ const ANNOTATIONS = {
     focusDetail: 'Overnight MPS & Sustained Active Recovery',
     icon: '🌙',
     justification:
-      'Snijders et al. (2015) demonstrated that 27.5 g pre-sleep casein protein significantly increased muscle strength and mass over a 12-week resistance training intervention. Trommelen & Van Loon (2016) confirmed pre-sleep protein stimulates overnight MPS without impairing fat oxidation. Kinsey et al. (2016) showed casein does not blunt overnight lipolysis. ISSN formally recommends ~30–40 g casein before sleep.',
-    priorities: ['30–40 g slow-digesting protein (casein)', 'Moderate carbohydrates', 'Minimal fat', 'No stimulants'],
+      'Snijders et al. (2015) demonstrated that 27.5 g pre-sleep casein protein significantly increased muscle strength and mass over a 12-week resistance training intervention. Trommelen & Van Loon (2016) confirmed pre-sleep protein stimulates overnight MPS without impairing fat oxidation. Kinsey et al. (2016) showed casein does not blunt overnight lipolysis. ISSN formally recommends ~30-40 g casein before sleep.',
+    priorities: ['30-40 g slow-digesting protein (casein)', 'Moderate carbohydrates', 'Minimal fat', 'No stimulants'],
     doItems: [
-      'Target 30–40 g slow-digesting protein -casein powder, cottage cheese, Greek yoghurt',
+      'Target 30-40 g slow-digesting protein - casein powder, cottage cheese, Greek yoghurt',
       'Add carbohydrate if needed to complete daily targets or support early next-day training',
-      'Time this 30–60 min before sleep for optimal digestion dynamics',
-      'Stay well hydrated through the evening -dehydration impairs overnight recovery',
+      'Time this 30-60 min before sleep for optimal digestion dynamics',
+      'Stay well hydrated through the evening - dehydration impairs overnight recovery',
     ],
     dontItems: [
-      'Large high-fat meal immediately before bed -impairs sleep quality and digestion',
-      'Alcohol within 3 h of sleep -reduces REM sleep and blocks overnight MPS',
-      'Stimulants (caffeine) within 6 h of sleep -half-life is 5–6 h',
+      'Large high-fat meal immediately before bed - impairs sleep quality and digestion',
+      'Alcohol within 3 h of sleep - reduces REM sleep and blocks overnight MPS',
+      'Stimulants (caffeine) within 6 h of sleep - half-life is 5-6 h',
       'Skipping this feeding when daily protein is still low and early training is planned next day',
     ],
     exampleFoods: ['Casein protein shake + berries', 'Cottage cheese + banana', 'Greek yoghurt (full fat) + oats + honey', 'Skyr + mixed seeds + honey', 'Low-fat milk + casein powder'],
@@ -233,21 +252,21 @@ const ANNOTATIONS = {
     focusDetail: 'Sustained Energy + Optimal Anabolic Spacing',
     icon: '🍽️',
     justification:
-      'ISSN recommends distributing protein across ≥4 meals (0.25–0.4 g/kg per meal) every 3–4 h. The "muscle full" hypothesis (Atherton et al., 2010) proposes that MPS plateaus ~90 min post-feeding and returns to baseline within ~3 h -meaning strategically spaced protein doses outperform bolus strategies for 24-hour net protein balance. Schoenfeld et al. (2013) meta-analysis further supports distributed protein over concentrated single feedings.',
-    priorities: ['20–40 g quality protein', 'Mixed carbohydrates (complex + moderate GI)', 'Moderate fat', 'Dietary fibre + vegetables'],
+      'ISSN recommends distributing protein across 4 meals (0.25-0.4 g/kg per meal) every 3-4 h. The "muscle full" hypothesis (Atherton et al., 2010) proposes that MPS plateaus ~90 min post-feeding and returns to baseline within ~3 h - meaning strategically spaced protein doses outperform bolus strategies for 24-hour net protein balance. Schoenfeld et al. (2013) meta-analysis further supports distributed protein over concentrated single feedings.',
+    priorities: ['20-40 g quality protein', 'Mixed carbohydrates (complex + moderate GI)', 'Moderate fat', 'Dietary fibre + vegetables'],
     doItems: [
-      'Include a complete protein source at every meal -every feeding opportunity matters',
+      'Include a complete protein source at every meal - every feeding opportunity matters',
       'Mix complex and moderate GI carbohydrates for sustained afternoon energy',
-      'Space this meal 3–4 h from prior and subsequent protein feedings',
-      'Add a generous serving of vegetables -fibre, micronutrients and satiety',
+      'Space this meal 3-4 h from prior and subsequent protein feedings',
+      'Add a generous serving of vegetables - fibre, micronutrients and satiety',
     ],
     dontItems: [
-      'Neglect carbohydrates -CHO fuels afternoon training performance',
-      'Eat a protein-free meal -each feeding should advance the 24-hour MPS signal',
+      'Neglect carbohydrates - CHO fuels afternoon training performance',
+      'Eat a protein-free meal - each feeding should advance the 24-hour MPS signal',
       'Large high-fat meals within 2 h of upcoming training',
     ],
     exampleFoods: ['Grilled chicken + brown rice + side salad', 'Tuna pasta + olive oil + roasted veg', 'Lean beef wrap + avocado + mixed leaves', 'Turkey + sweet potato + broccoli'],
-    digestNote: 'Mixed meals (protein + fat + fibre) take 3–4 h to fully digest. Time this meal 2+ h before training.',
+    digestNote: 'Mixed meals (protein + fat + fibre) take 3-4 h to fully digest. Time this meal 2+ h before training.',
     source: 'Kerksick et al. (2017) ISSN; Atherton et al. (2010) Am J Physiol; Schoenfeld et al. (2013) J ISSN',
   },
 
@@ -256,28 +275,28 @@ const ANNOTATIONS = {
     focusDetail: 'Complete Daily Targets + Prepare Overnight Systems',
     icon: '🌆',
     justification:
-      'The final meal completes daily macro targets and initiates overnight recovery. Total daily protein (1.4–2.0 g/kg) remains the primary driver of body composition outcomes (Kerksick et al., 2017). Adequate evening carbohydrate intake supports next-day glycogen -Bussau et al. (2002) showed near-doubling of muscle glycogen with a single day of high CHO intake after exercise.',
-    priorities: ['30–40 g protein to complete daily targets', 'Moderate carbohydrates', 'Vegetables + micronutrients', 'Light-to-moderate fat'],
+      'The final meal completes daily macro targets and initiates overnight recovery. Total daily protein (1.4-2.0 g/kg) remains the primary driver of body composition outcomes (Kerksick et al., 2017). Adequate evening carbohydrate intake supports next-day glycogen - Bussau et al. (2002) showed near-doubling of muscle glycogen with a single day of high CHO intake after exercise.',
+    priorities: ['30-40 g protein to complete daily targets', 'Moderate carbohydrates', 'Vegetables + micronutrients', 'Light-to-moderate fat'],
     doItems: [
-      'Complete your daily protein target -large overnight deficits impair recovery',
-      'Include carbohydrates -supports glycogen stores for next-day training',
+      'Complete your daily protein target - large overnight deficits impair recovery',
+      'Include carbohydrates - supports glycogen stores for next-day training',
       'Add a variety of coloured vegetables for micronutrients',
-      'Wind down -prefer a calmer, lighter meal to support sleep onset',
+      'Wind down - prefer a calmer, lighter meal to support sleep onset',
     ],
     dontItems: [
-      'Massive caloric surplus "just before bed" -excess calories still contribute to fat storage',
-      'Skip protein -overnight MPS requires substrate availability',
-      'Stimulating foods close to sleep -high caffeine, alcohol, or very spicy foods',
+      'Massive caloric surplus "just before bed" - excess calories still contribute to fat storage',
+      'Skip protein - overnight MPS requires substrate availability',
+      'Stimulating foods close to sleep - high caffeine, alcohol, or very spicy foods',
     ],
     exampleFoods: ['Salmon + roasted vegetables + basmati rice', 'Turkey mince bolognese + wholegrain pasta', 'Chicken thigh + sweet potato + green beans', 'Eggs + mixed veg + sourdough toast'],
-    digestNote: 'Allow 2–3 h between dinner and sleep for comfortable digestion. Plan a separate pre-sleep protein snack for maximum overnight MPS.',
+    digestNote: 'Allow 2-3 h between dinner and sleep for comfortable digestion. Plan a separate pre-sleep protein snack for maximum overnight MPS.',
     source: 'Kerksick et al. (2017) ISSN; Bussau et al. (2002) Eur J Appl Physiol',
   },
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 // SCENARIO META
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 const SCENARIO_META = {
   single: {
     label: 'Single Training Session',
@@ -285,58 +304,68 @@ const SCENARIO_META = {
     tagline: 'Standard single-session day. Nail your pre/post-workout windows and distribute protein evenly.',
     colour: 'amber',
     principles: [
-      'Pre-workout: Low fibre, moderate CHO + 20–30 g protein, 60–90 min before',
-      'Post-workout: 20–40 g fast protein + CHO within 60 min',
-      'Protein: Distribute evenly (~0.3 g/kg per meal) every 3–4 h',
-      'Pre-sleep: 30–40 g casein to maximise overnight MPS',
+      'Pre-workout: Low fibre, moderate CHO + 20-30 g protein, 60-90 min before',
+      'Post-workout: 20-40 g fast protein + CHO within 60 min',
+      'Protein: Distribute evenly (~0.3 g/kg per meal) every 3-4 h',
+      'Pre-sleep: 30-40 g casein to maximise overnight MPS',
     ],
   },
   'double-back-to-back': {
-    label: 'Double Training -Back to Back',
+    label: 'Double Training - Back to Back',
     emoji: '🔥',
     tagline: 'Two sessions within 3 h. Rapid glycogen restoration is your #1 priority between sessions. Speed > complexity.',
     colour: 'orange',
     warning: 'Keep recovery tight between sessions: early carbohydrate and protein intake is usually the main limiter of second-session quality.',
     principles: [
-      'Between sessions: 1.0–1.2 g/kg HIGH-GI carbs IMMEDIATELY after session 1',
-      'Liquid or semi-liquid nutrition preferred -faster gastric clearance',
-      'Add 0.2–0.4 g/kg protein if CHO intake is suboptimal',
-      'Caffeine (3–8 mg/kg) can be ergogenic for session 2 performance',
-      'Total daily CHO significantly elevated -plan ahead',
+      'If 30-60 min is available: 1.0-1.2 g/kg HIGH-GI carbs immediately after session 1',
+      'If <30 min or effectively back-to-back: prioritise intra-workout CHO drink delivery',
+      'Use dense/liquid carbs first, then protein if tolerated',
+      'Keep fibre and fat minimal between sessions',
+      'Total daily CHO significantly elevated - plan ahead',
+    ],
+    exampleColumns: [
+      {
+        title: '30-60 min available',
+        items: ['Jaffa cakes/sweets', 'Sports drink + gels', 'Juice + carb powder', 'Optional whey'],
+      },
+      {
+        title: '<30 min or continuous',
+        items: ['Intra-workout CHO drink', 'Electrolyte + carb mix', 'Small frequent sips', 'Minimal solids'],
+      },
     ],
   },
   'double-spaced': {
-    label: 'Double Training -4+ Hours Apart',
+    label: 'Double Training - 4+ Hours Apart',
     emoji: '🔁',
     tagline: 'Two sessions with adequate recovery. Full glycogen restoration is possible with proper inter-session nutrition.',
     colour: 'teal',
     principles: [
-      'Post session 1: Normal recovery protocol -protein + CHO within 60 min',
-      'Inter-session meal: Complete balanced meal 2–3 h post session 1',
-      'Pre session 2: Standard pre-workout nutrition 60–90 min before',
-      'Post session 2: Full recovery meal -protein + CHO + fat acceptable',
-      'Total daily CHO elevated -prioritise carbs at all peri-workout meals',
+      'Post session 1: Normal recovery protocol - protein + CHO within 60 min',
+      'Inter-session meal: Complete balanced meal 2-3 h post session 1',
+      'Pre session 2: Standard pre-workout nutrition 60-90 min before',
+      'Post session 2: Full recovery meal - protein + CHO + fat acceptable',
+      'Total daily CHO elevated - prioritise carbs at all peri-workout meals',
     ],
   },
   'late-to-early': {
-    label: 'Training Late → Early Next Day',
+    label: 'Training Late - Early Next Day',
     emoji: '🌙',
     tagline: 'Evening session + early morning training. Overnight recovery is compressed, so pre-sleep planning becomes high priority.',
     colour: 'purple',
     warning: 'Overnight recovery is compressed. Plan evening and pre-sleep intake intentionally, and adjust pre-morning fuelling to your tolerance and session demands.',
     principles: [
       'Post evening session: Full recovery meal within 60 min',
-      'Pre-sleep: 30–40 g CASEIN + moderate carbs -6–7 h overnight amino acid drip',
-      'Morning: Fast-digesting carbs (banana, white toast) 30–60 min before training',
+      'Pre-sleep: 30-40 g CASEIN + moderate carbs - 6-7 h overnight amino acid drip',
+      'Morning: Fast-digesting carbs (banana, white toast) 30-60 min before training',
       'Avoid under-fuelling the morning session after a heavy prior evening load',
       'Consider total daily calorie increase to support dual-session recovery',
     ],
   },
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 // MEAL ROLE LOGIC
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 function getMealRole(meal, mealIndex, totalMeals, scenario, t1Mins, t2Mins) {
   // Use existing meal plan classification first
   if (meal.isPreTrain) return 'preWorkout';
@@ -355,7 +384,7 @@ function getMealRole(meal, mealIndex, totalMeals, scenario, t1Mins, t2Mins) {
     if (mMins > lo + 30 && mMins < hi - 60) {
       return scenario === 'double-back-to-back' ? 'rapidRecovery' : 'betweenSessions';
     }
-    if (mMins > hi + 30) return 'postWorkout';
+    if (mMins > hi + 30) return scenario === 'double-back-to-back' ? 'rapidRecovery' : 'postWorkout';
   }
 
   // Late-to-early: last meal is pre-sleep
@@ -366,9 +395,9 @@ function getMealRole(meal, mealIndex, totalMeals, scenario, t1Mins, t2Mins) {
   return 'midDay';
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 // ROLE GRADIENT COLOURS (for the horizontal bar)
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 const ROLE_GRADIENT = {
   morning:         'rgba(59,130,246,0.45)',   // blue
   midDay:          'rgba(100,116,139,0.35)',  // slate
@@ -381,9 +410,9 @@ const ROLE_GRADIENT = {
   training:        'rgba(239,68,68,0.55)',    // red
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 // VISUAL DAY BAR COMPONENT
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 function DayBar({ wakeTime, sleepTime, trainingTime1, trainingTime2, numSessions, meals, scenario }) {
   const dayStart = parseMins(wakeTime);
   const dayEnd = dayStart + (16 * 60);
@@ -414,54 +443,73 @@ function DayBar({ wakeTime, sleepTime, trainingTime1, trainingTime2, numSessions
 
   // Build gradient stops from meal roles + training sessions.
   // Each meal contributes its role colour at its position.
-  // Training gets a hard red zone. The bar always ends in purple (pre-sleep).
   const stops = [];
+  const forcePurple = scenario === 'late-to-early';
 
   // Start: first meal's colour at 0%
-  stops.push({ pos: 0, colour: ROLE_GRADIENT[mealRoles[0]] || ROLE_GRADIENT.morning });
+  stops.push({
+    pos: 0,
+    colour: forcePurple ? ROLE_GRADIENT.preSleep : (ROLE_GRADIENT[mealRoles[0]] || ROLE_GRADIENT.morning),
+  });
 
   // Add each meal as a smooth stop
   meals.forEach((meal, i) => {
     const role = mealRoles[i];
-    const colour = ROLE_GRADIENT[role] || ROLE_GRADIENT.midDay;
+    const colour = forcePurple ? ROLE_GRADIENT.preSleep : (ROLE_GRADIENT[role] || ROLE_GRADIENT.midDay);
     const pos = pctFromAbs(mealMins[i]);
     stops.push({ pos, colour });
   });
-
-  // Insert training as a hard-edged red zone
-  const insertTraining = (tMins) => {
-    const startPos = pctFromAbs(tMins);
-    const endPos = pctFromAbs(tMins + SESSION_DURATION);
-    // Find what colour the gradient would be just before training
-    const prevColour = stops.filter(s => s.pos <= startPos).pop()?.colour || ROLE_GRADIENT.midDay;
-    // Find what colour comes after training
-    const nextStop = stops.find(s => s.pos > endPos);
-    const nextColour = nextStop?.colour || ROLE_GRADIENT.postWorkout;
-    stops.push({ pos: Math.max(0, startPos - 0.5), colour: prevColour });
-    stops.push({ pos: startPos, colour: ROLE_GRADIENT.training });
-    stops.push({ pos: endPos, colour: ROLE_GRADIENT.training });
-    stops.push({ pos: Math.min(100, endPos + 0.5), colour: nextColour });
-  };
-
-  trainingMarkers.forEach(marker => insertTraining(marker.mins));
 
   // Always end in pre-sleep purple at 100%
   stops.push({ pos: 100, colour: ROLE_GRADIENT.preSleep });
 
   // Deduplicate and sort
   stops.sort((a, b) => a.pos - b.pos);
-  const bgGradient = stops.length > 1
-    ? `linear-gradient(to right, ${stops.map(s => `${s.colour} ${s.pos}%`).join(', ')})`
+  const compactStops = stops.reduce((acc, stop) => {
+    const prev = acc[acc.length - 1];
+    if (!prev) {
+      acc.push(stop);
+      return acc;
+    }
+    // Merge nearly identical positions to avoid thin seam artifacts in the bar.
+    if (Math.abs(stop.pos - prev.pos) < 0.2) {
+      acc[acc.length - 1] = { ...prev, colour: stop.colour };
+      return acc;
+    }
+    // Skip near-duplicate same-colour stops.
+    if (stop.colour === prev.colour && Math.abs(stop.pos - prev.pos) < 1) {
+      return acc;
+    }
+    acc.push(stop);
+    return acc;
+  }, []);
+  const trainingBands = trainingMarkers.map(marker => {
+    const start = pctFromAbs(marker.mins);
+    const end = pctFromAbs(marker.mins + SESSION_DURATION);
+    const left = Math.max(0, start - 2.2);
+    const right = Math.min(100, end + 2.2);
+    return {
+      idx: marker.idx,
+      time: marker.time,
+      start,
+      end,
+      midpoint: (start + end) / 2,
+      left,
+      width: Math.max(0, right - left),
+    };
+  });
+  const bgGradient = compactStops.length > 1
+    ? `linear-gradient(to right, ${compactStops.map(s => `${s.colour} ${s.pos}%`).join(', ')})`
     : undefined;
 
   // Collect all marker positions for stagger logic
   const allMarkers = [
     ...meals.map((meal, i) => ({ pct: pctFromAbs(mealMins[i]), label: meal.time, type: 'meal', idx: i })),
-    ...trainingMarkers.map(marker => ({
-      pct: pctFromAbs(marker.mins),
-      label: marker.time,
+    ...trainingBands.map(band => ({
+      pct: band.midpoint,
+      label: band.time,
       type: 'train',
-      idx: marker.idx,
+      idx: band.idx,
     })),
   ].sort((a, b) => a.pct - b.pct);
 
@@ -501,12 +549,25 @@ function DayBar({ wakeTime, sleepTime, trainingTime1, trainingTime2, numSessions
             </div>
           );
         })}
-        {/* Training markers on bar */}
-        {trainingMarkers.map(marker => (
+        {/* Training colour bands */}
+        {trainingBands.map(band => (
           <div
-            key={`train-marker-${marker.idx}`}
-            className="absolute top-1/2 -translate-y-1/2 z-20"
-            style={{ left: `calc(${pctFromAbs(marker.mins)}% - 7px)` }}
+            key={`train-band-${band.idx}`}
+            className="absolute inset-y-0 z-[6] pointer-events-none"
+            style={{
+              left: `${band.left}%`,
+              width: `${band.width}%`,
+              background: 'linear-gradient(to right, rgba(239,68,68,0), rgba(239,68,68,0.35) 28%, rgba(239,68,68,0.62) 50%, rgba(239,68,68,0.35) 72%, rgba(239,68,68,0))',
+              backgroundRepeat: 'no-repeat',
+            }}
+          />
+        ))}
+        {/* Training markers on bar */}
+        {trainingBands.map(band => (
+          <div
+            key={`train-marker-${band.idx}`}
+            className="absolute top-1/2 z-20"
+            style={{ left: `${band.midpoint}%`, transform: 'translate(-50%, -50%)' }}
           >
             <span className="text-sm leading-none">🔥</span>
           </div>
@@ -527,22 +588,22 @@ function DayBar({ wakeTime, sleepTime, trainingTime1, trainingTime2, numSessions
             </span>
           );
         })}
-        {trainingMarkers.map(marker => (
+        {trainingBands.map(band => (
           <span
-            key={`train-label-${marker.idx}`}
+            key={`train-label-${band.idx}`}
             className="absolute text-[10px] text-white font-bold whitespace-nowrap"
             style={{
-              left: `${pctFromAbs(marker.mins)}%`,
+              left: `${band.midpoint}%`,
               transform: 'translateX(-50%)',
-              top: staggerMap.has(`train-${marker.idx}`) ? '12px' : '2px',
+              top: staggerMap.has(`train-${band.idx}`) ? '12px' : '2px',
             }}
           >
-            {marker.time}
+            {band.time}
           </span>
         ))}
       </div>
       {/* Legend */}
-      <div className="flex flex-wrap gap-3 mt-2 text-xs text-white/70">
+      <div className="flex flex-wrap gap-3 mt-2 text-xs text-white">
         <span className="flex items-center gap-1"><span className="inline-block w-3 h-2 rounded bg-amber-500/50" /> Pre-workout</span>
         <span className="flex items-center gap-1"><span className="inline-block w-3 h-2 rounded bg-red-500/55" /> Training</span>
         <span className="flex items-center gap-1"><span className="inline-block w-3 h-2 rounded bg-green-500/45" /> Post-workout</span>
@@ -554,9 +615,9 @@ function DayBar({ wakeTime, sleepTime, trainingTime1, trainingTime2, numSessions
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 // ANNOTATED MEAL CARD
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 function MealCard({ meal, role, annotation, isExpanded, onToggle, mealIndex }) {
   const s = ROLE_STYLES[role] || ROLE_STYLES.midDay;
   const a = annotation;
@@ -675,13 +736,28 @@ function MealCard({ meal, role, annotation, isExpanded, onToggle, mealIndex }) {
                   <p className="text-xs font-semibold text-amber-400 mb-1.5 flex items-center gap-1">
                     <HiStar /> Example Foods
                   </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {a.exampleFoods.map((f, i) => (
-                      <span key={i} className="text-xs px-2 py-1 rounded-lg bg-dark-border text-gray-300">
-                        {f}
-                      </span>
-                    ))}
-                  </div>
+                  {a.exampleFoodColumns ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {a.exampleFoodColumns.map((column, idx) => (
+                        <div key={idx} className="rounded-lg border border-dark-border bg-dark/40 p-2.5">
+                          <p className="text-[11px] font-semibold text-amber-300 mb-1.5">{column.title}</p>
+                          <div className="space-y-1">
+                            {column.items.map((item, itemIdx) => (
+                              <p key={itemIdx} className="text-[11px] text-gray-300 leading-relaxed">- {item}</p>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {a.exampleFoods.map((f, i) => (
+                        <span key={i} className="text-xs px-2 py-1 rounded-lg bg-dark-border text-gray-300">
+                          {f}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Digestion timing */}
@@ -703,7 +779,7 @@ function MealCard({ meal, role, annotation, isExpanded, onToggle, mealIndex }) {
 
                 {/* Source citation */}
                 <p className="text-xs text-gray-600 italic border-t border-dark-border/40 pt-2">
-                  📖 {a.source}
+                  Source: {a.source}
                 </p>
               </div>
             </Motion.div>
@@ -714,12 +790,12 @@ function MealCard({ meal, role, annotation, isExpanded, onToggle, mealIndex }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 // TRAINING EVENT CARD
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 function TrainingEvent({ time, label, scenario, sessionNum, weightKg }) {
   const choPer30Min = scenario === 'double-back-to-back'
-    ? `≈${Math.round(weightKg * 0.6)} g carbs` // ~0.6g/kg in first 30 min
+    ? `~${Math.round(weightKg * 0.6)} g carbs` // ~0.6g/kg in first 30 min
     : null;
 
   return (
@@ -742,7 +818,7 @@ function TrainingEvent({ time, label, scenario, sessionNum, weightKg }) {
         </div>
         {scenario === 'double-back-to-back' && sessionNum === 1 && choPer30Min && (
           <span className="text-xs text-orange-400 bg-orange-500/10 border border-orange-500/30 px-2 py-0.5 rounded-full">
-            Start recovery immediately → {choPer30Min}/30 min
+            Start recovery immediately - {choPer30Min}/30 min
           </span>
         )}
       </div>
@@ -750,9 +826,9 @@ function TrainingEvent({ time, label, scenario, sessionNum, weightKg }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 // MAIN COMPONENT
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 export default function MealTimingSection({ results }) {
   const [numSessions, setNumSessions] = useState(1);
   const [trainingTime2, setTrainingTime2] = useState('12:00');
@@ -768,10 +844,11 @@ export default function MealTimingSection({ results }) {
   const sleepTime = addMins(wakeTime, 16 * 60); // 16h after wake (8h sleep)
   const dayStartMins = parseMins(wakeTime);
   const dayEndMins = dayStartMins + (16 * 60);
+  const canSelectLateToEarly = numSessions === 2 && parseMins(trainingTime1) >= (17 * 60);
   const autoScenario = detectScenario(numSessions, trainingTime1, trainingTime2);
   const allowedScenarios = numSessions === 1
     ? new Set(['single'])
-    : new Set(Object.keys(SCENARIO_META));
+    : new Set(Object.keys(SCENARIO_META).filter(key => key !== 'late-to-early' || canSelectLateToEarly));
   const scenario = (scenarioOverride && allowedScenarios.has(scenarioOverride))
     ? scenarioOverride
     : autoScenario;
@@ -860,7 +937,7 @@ export default function MealTimingSection({ results }) {
 
       <div className="p-6 space-y-6">
 
-        {/* ── Inputs ────────────────────────────────────────── */}
+        {/* -- Inputs ------------------------------------------ */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {/* Number of sessions */}
           <div>
@@ -912,15 +989,22 @@ export default function MealTimingSection({ results }) {
           <label className="block text-xs text-gray-400 mb-2 font-medium">Training Scenario</label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {Object.entries(SCENARIO_META).map(([key, s]) => (
-                <button
+                  <button
                   key={key}
                   onClick={() => handleScenarioChange(key)}
-                  disabled={numSessions === 1 && key !== 'single'}
+                  disabled={
+                    (numSessions === 1 && key !== 'single') ||
+                    (key === 'late-to-early' && !canSelectLateToEarly)
+                  }
                   className={`flex items-center gap-2 p-3 rounded-lg border text-left transition-all cursor-pointer ${
                     scenario === key
                       ? 'border-gold/50 bg-gold/10 text-white'
                       : 'border-dark-border bg-dark text-gray-400 hover:border-gray-500'
-                  } ${numSessions === 1 && key !== 'single' ? 'opacity-30 cursor-not-allowed' : ''}`}
+                  } ${
+                    (numSessions === 1 && key !== 'single') || (key === 'late-to-early' && !canSelectLateToEarly)
+                      ? 'opacity-30 cursor-not-allowed'
+                      : ''
+                  }`}
                 >
                 <span className="text-base">{s.emoji}</span>
                 <span className="text-xs font-medium leading-tight">{s.label}</span>
@@ -932,7 +1016,7 @@ export default function MealTimingSection({ results }) {
           </div>
         </div>
 
-        {/* ── Scenario Summary Card ─────────────────────────── */}
+        {/* -- Scenario Summary Card --------------------------- */}
         <Motion.div
           key={scenario}
           initial={{ opacity: 0, y: 10 }}
@@ -959,11 +1043,25 @@ export default function MealTimingSection({ results }) {
                   </div>
                 ))}
               </div>
+              {meta.exampleColumns && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                  {meta.exampleColumns.map((column, idx) => (
+                    <div key={idx} className="rounded-lg border border-dark-border bg-dark/40 p-2.5">
+                      <p className="text-[11px] font-semibold text-amber-300 mb-1.5">{column.title}</p>
+                      <div className="space-y-1">
+                        {column.items.map((item, itemIdx) => (
+                          <p key={itemIdx} className="text-[11px] text-gray-300 leading-relaxed">- {item}</p>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </Motion.div>
 
-        {/* ── Day Bar ────────────────────────────────────────── */}
+        {/* -- Day Bar ------------------------------------------ */}
         <DayBar
           wakeTime={wakeTime}
           sleepTime={sleepTime}
@@ -974,7 +1072,7 @@ export default function MealTimingSection({ results }) {
           scenario={scenario}
         />
 
-        {/* ── Expand All / Collapse All ─────────────────────── */}
+        {/* -- Expand All / Collapse All ----------------------- */}
         <div className="flex items-center justify-between">
           <div>
             <h4 className="text-white font-semibold text-sm">Annotated Day Timeline</h4>
@@ -988,7 +1086,7 @@ export default function MealTimingSection({ results }) {
           </button>
         </div>
 
-        {/* ── Timeline ──────────────────────────────────────── */}
+        {/* -- Timeline ---------------------------------------- */}
         <div className="relative">
           {/* Vertical line */}
           <div className="absolute left-4 top-0 bottom-0 w-px bg-dark-border hidden sm:block" />
@@ -1001,7 +1099,7 @@ export default function MealTimingSection({ results }) {
             <div className="flex items-center gap-3 px-4 py-2.5 rounded-lg border border-yellow-500/20 bg-yellow-500/5">
               <span className="text-yellow-400 font-bold text-sm">☀️ {wakeTime}</span>
               <span className="text-gray-300 text-sm">Wake Up</span>
-              <span className="text-xs text-gray-500 ml-auto">Rehydrate first -300–500 ml water</span>
+              <span className="text-xs text-gray-500 ml-auto">Rehydrate first - 300-500 ml water</span>
             </div>
           </div>
 
@@ -1047,7 +1145,7 @@ export default function MealTimingSection({ results }) {
               <span className="text-purple-400 font-bold text-sm">🌙 {sleepTime}</span>
               <span className="text-gray-300 text-sm">Sleep</span>
               <span className="text-xs text-gray-500 ml-auto">
-                {scenario === 'late-to-early' ? '⚠️ Early session tomorrow -pre-sleep nutrition critical' : 'Overnight recovery begins'}
+                {scenario === 'late-to-early' ? '⚠️ Early session tomorrow - pre-sleep nutrition critical' : 'Overnight recovery begins'}
               </span>
             </div>
           </div>
@@ -1071,7 +1169,7 @@ export default function MealTimingSection({ results }) {
 
         {/* Footer note */}
         <p className="text-xs text-gray-600 border-t border-dark-border/40 pt-4">
-          Guidance based on Kerksick et al. (2017) ISSN Position Stand: Nutrient Timing, J Int Soc Sports Nutr 14:33. All timing recommendations reflect research on healthy, trained adults. Individual tolerance varies -adjust based on personal GI response and schedule constraints.
+          Guidance based on Kerksick et al. (2017) ISSN Position Stand: Nutrient Timing, J Int Soc Sports Nutr 14:33. All timing recommendations reflect research on healthy, trained adults. Individual tolerance varies - adjust based on personal GI response and schedule constraints.
         </p>
       </div>
     </Motion.section>
