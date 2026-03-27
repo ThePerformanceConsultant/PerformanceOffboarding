@@ -36,15 +36,32 @@ function format24h(totalMins) {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
+function format12h(totalMins) {
+  const norm = ((Math.round(totalMins) % 1440) + 1440) % 1440;
+  const h24 = Math.floor(norm / 60);
+  const m = norm % 60;
+  const period = h24 >= 12 ? 'PM' : 'AM';
+  const h12 = (h24 % 12) || 12;
+  return `${h12}:${String(m).padStart(2, '0')} ${period}`;
+}
+
 function addMins(timeStr, minutes) {
   return format24h(parseMins(timeStr) + minutes);
 }
 
-function getScenarioContext(numSessions, t1, t2) {
+function clampSessionDuration(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return 60;
+  const rounded = Math.round(parsed);
+  return Math.min(240, Math.max(30, rounded));
+}
+
+function getScenarioContext(numSessions, t1, t2, sessionDuration1Mins = 60) {
   const base = {
     m1: parseMins(t1),
     m2: parseMins(t2),
-    forwardGapMinutes: null,
+    forwardStartGapMinutes: null,
+    recoveryGapMinutes: null,
     isLateToEarly: false,
     validScenarios: {
       single: numSessions === 1,
@@ -60,14 +77,16 @@ function getScenarioContext(numSessions, t1, t2) {
   const isEvening = base.m1 >= (17 * 60);
   const isMorning = base.m2 <= (10 * 60);
   const wrapsToNextDay = base.m2 <= base.m1;
-  const forwardGapMinutes = (base.m2 - base.m1 + 1440) % 1440;
+  const forwardStartGapMinutes = (base.m2 - base.m1 + 1440) % 1440;
+  const recoveryGapMinutes = Math.max(0, forwardStartGapMinutes - clampSessionDuration(sessionDuration1Mins));
   const isLateToEarly = isEvening && isMorning && wrapsToNextDay;
-  const isDoubleSpaced = !isLateToEarly && forwardGapMinutes >= 240;
-  const isBackToBack = !isLateToEarly && forwardGapMinutes < 240;
+  const isDoubleSpaced = !isLateToEarly && recoveryGapMinutes >= 240;
+  const isBackToBack = !isLateToEarly && recoveryGapMinutes < 240;
 
   return {
     ...base,
-    forwardGapMinutes,
+    forwardStartGapMinutes,
+    recoveryGapMinutes,
     isLateToEarly,
     validScenarios: {
       single: false,
@@ -96,76 +115,110 @@ function buildMealRolePlan({
   trainingTime2,
   numSessions,
   scenario,
+  sessionDuration1Mins = 60,
+  sessionDuration2Mins = 60,
 }) {
   if (!meals?.length) return [];
 
   const dayStart = parseMins(wakeTime);
   const t1Abs = toAbsoluteMinutes(trainingTime1, dayStart);
+  const t1EndAbs = t1Abs + clampSessionDuration(sessionDuration1Mins);
   const t2Abs = numSessions === 2
     ? toAbsoluteMinutes(trainingTime2, dayStart, { forceNextDay: scenario === 'late-to-early' })
     : null;
+  const t2EndAbs = t2Abs !== null ? (t2Abs + clampSessionDuration(sessionDuration2Mins)) : null;
 
   const mealTimeline = meals.map((meal, mealIndex) => ({
     mealIndex,
     absMins: toAbsoluteMinutes(meal.rawTime || meal.time, dayStart),
   }));
-  const sorted = [...mealTimeline].sort((a, b) => a.absMins - b.absMins);
+
+  const sessionWindows = [
+    { start: t1Abs, end: t1EndAbs },
+    ...(t2Abs !== null && t2EndAbs !== null ? [{ start: t2Abs, end: t2EndAbs }] : []),
+  ];
+
+  const mealTimelineWithDisplay = mealTimeline.map((entry) => {
+    let displayAbsMins = entry.absMins;
+    sessionWindows.forEach(({ start, end }) => {
+      if (displayAbsMins >= start && displayAbsMins <= end) {
+        displayAbsMins = end + 1;
+      }
+    });
+    return { ...entry, displayAbsMins };
+  });
+
+  const sorted = [...mealTimelineWithDisplay].sort((a, b) => (
+    (a.displayAbsMins - b.displayAbsMins) || (a.absMins - b.absMins) || (a.mealIndex - b.mealIndex)
+  ));
   const orderByMealIndex = new Map(sorted.map((entry, order) => [entry.mealIndex, order]));
 
   const lastBefore = (sessionAbs) => {
     let idx = null;
     sorted.forEach((entry) => {
-      if (entry.absMins < sessionAbs) idx = entry.mealIndex;
+      if (entry.displayAbsMins < sessionAbs) idx = entry.mealIndex;
     });
     return idx;
   };
-  const firstAfter = (sessionAbs) => {
-    const found = sorted.find(entry => entry.absMins > sessionAbs);
+  const firstAtOrAfter = (sessionAbs) => {
+    const found = sorted.find(entry => entry.displayAbsMins >= sessionAbs);
     return found ? found.mealIndex : null;
   };
 
   const pre1Idx = lastBefore(t1Abs);
-  const post1Idx = firstAfter(t1Abs);
+  const post1Idx = firstAtOrAfter(t1EndAbs);
   const pre2Idx = t2Abs !== null ? lastBefore(t2Abs) : null;
-  const post2Idx = t2Abs !== null ? firstAfter(t2Abs) : null;
+  const post2Idx = t2EndAbs !== null ? firstAtOrAfter(t2EndAbs) : null;
   const finalMealIdx = sorted[sorted.length - 1]?.mealIndex ?? null;
 
-  return mealTimeline.map(({ mealIndex, absMins }) => {
+  const formatWindowRange = (startAbs, endAbs) => `${format12h(startAbs)}-${format12h(endAbs)}`;
+
+  return mealTimelineWithDisplay.map(({ mealIndex, absMins, displayAbsMins }) => {
     const chronologicalOrder = orderByMealIndex.get(mealIndex) ?? mealIndex;
     let role = chronologicalOrder === 0
       ? 'morning'
       : (chronologicalOrder === (meals.length - 1) ? 'evening' : 'midDay');
     let timeWindowLabel = null;
+    let windowRangeLabel = null;
 
-    const mealTimeLabel = meals[mealIndex].time;
-    const beforeS1 = absMins < t1Abs;
-    const betweenSessions = t2Abs !== null && absMins > t1Abs && absMins < t2Abs;
-    const afterS2 = t2Abs !== null && absMins > t2Abs;
-    const leadToS2 = t2Abs !== null ? (t2Abs - absMins) : null;
+    const beforeS1 = displayAbsMins < t1Abs;
+    const betweenSessions = t2Abs !== null && displayAbsMins >= t1EndAbs && displayAbsMins < t2Abs;
+    const afterS2 = t2EndAbs !== null && displayAbsMins >= t2EndAbs;
+    const leadToS2 = t2Abs !== null ? (t2Abs - displayAbsMins) : null;
 
-    const setPre = (sessionTime) => {
+    const setPre = (sessionStartAbs) => {
       role = 'preWorkout';
-      timeWindowLabel = `Pre-session window to ${sessionTime}`;
+      timeWindowLabel = 'Pre-session window';
+      windowRangeLabel = formatWindowRange(sessionStartAbs - 150, sessionStartAbs);
     };
     const setRapid = () => {
       role = 'rapidRecovery';
       timeWindowLabel = 'Between sessions refuel window';
+      if (t2Abs !== null) {
+        const rapidWindow = t2Abs - t1EndAbs;
+        windowRangeLabel = rapidWindow > 0
+          ? `${formatWindowRange(t1EndAbs, t2Abs)} (S1 end -> S2 start)`
+          : 'Immediate transition (S1 end -> S2 start)';
+      }
     };
-    const setPost = () => {
+    const setPost = (sessionEndAbs) => {
       role = 'postWorkout';
-      timeWindowLabel = `Post-workout to ${mealTimeLabel}`;
+      timeWindowLabel = 'Post-workout window (0-2 h)';
+      windowRangeLabel = formatWindowRange(sessionEndAbs, sessionEndAbs + 120);
     };
 
     if (numSessions === 1) {
-      if (mealIndex === pre1Idx && beforeS1) setPre(trainingTime1);
-      if (mealIndex === post1Idx && absMins > t1Abs) setPost();
+      if (mealIndex === pre1Idx && beforeS1) setPre(t1Abs);
+      if (mealIndex === post1Idx && displayAbsMins >= t1EndAbs) setPost(t1EndAbs);
     } else if (scenario === 'double-back-to-back') {
-      if (mealIndex === pre1Idx && beforeS1) setPre(trainingTime1);
+      if (mealIndex === pre1Idx && beforeS1) setPre(t1Abs);
       if (betweenSessions) setRapid();
-      if (mealIndex === post2Idx && afterS2) setPost();
+      if (mealIndex === post2Idx && afterS2 && t2EndAbs !== null) setPost(t2EndAbs);
     } else if (scenario === 'double-spaced') {
-      if (mealIndex === pre1Idx && beforeS1) setPre(trainingTime1);
-      if (mealIndex === post1Idx && absMins > t1Abs && (!t2Abs || absMins < t2Abs)) setPost();
+      if (mealIndex === pre1Idx && beforeS1) setPre(t1Abs);
+      if (mealIndex === post1Idx && displayAbsMins >= t1EndAbs && (t2Abs === null || displayAbsMins < t2Abs)) {
+        setPost(t1EndAbs);
+      }
 
       if (betweenSessions) {
         const isSecondSessionPreWindow = (
@@ -175,29 +228,34 @@ function buildMealRolePlan({
           leadToS2 <= 150
         );
         if (isSecondSessionPreWindow) {
-          setPre(trainingTime2);
+          setPre(t2Abs);
         } else if (mealIndex !== post1Idx) {
           role = 'betweenSessions';
           timeWindowLabel = null;
+          windowRangeLabel = null;
         }
       }
 
-      if (mealIndex === post2Idx && afterS2) setPost();
+      if (mealIndex === post2Idx && afterS2 && t2EndAbs !== null) setPost(t2EndAbs);
     } else if (scenario === 'late-to-early') {
-      if (mealIndex === pre1Idx && beforeS1) setPre(trainingTime1);
-      if (mealIndex === post1Idx && absMins > t1Abs && mealIndex !== finalMealIdx) setPost();
+      if (mealIndex === pre1Idx && beforeS1) setPre(t1Abs);
+      if (mealIndex === post1Idx && displayAbsMins >= t1EndAbs && mealIndex !== finalMealIdx) setPost(t1EndAbs);
     }
 
     if (scenario === 'late-to-early' && mealIndex === finalMealIdx) {
       role = 'preSleep';
       timeWindowLabel = 'Pre-sleep recovery window';
+      windowRangeLabel = null;
     }
 
     return {
       mealIndex,
       absMins,
+      displayAbsMins,
       role,
       timeWindowLabel,
+      windowRangeLabel,
+      actualTimeLabel: meals[mealIndex].time,
     };
   });
 }
@@ -505,38 +563,6 @@ const SCENARIO_META = {
 };
 
 // -----------------------------------------------------------------------------
-// MEAL ROLE LOGIC
-// -----------------------------------------------------------------------------
-function getMealRole(meal, mealIndex, totalMeals, scenario, t1Mins, t2Mins) {
-  // Use existing meal plan classification first
-  if (meal.isPreTrain) return 'preWorkout';
-  if (meal.isPostTrain) {
-    if (scenario === 'double-back-to-back') return 'rapidRecovery';
-    if (scenario === 'late-to-early') return 'preSleep';
-    return 'postWorkout';
-  }
-
-  const mMins = parseMins(meal.time);
-
-  // For double sessions -detect meals between the two sessions
-  if ((scenario === 'double-spaced' || scenario === 'double-back-to-back') && t2Mins !== null) {
-    const lo = Math.min(t1Mins, t2Mins);
-    const hi = Math.max(t1Mins, t2Mins);
-    if (mMins > lo + 30 && mMins < hi - 60) {
-      return scenario === 'double-back-to-back' ? 'rapidRecovery' : 'betweenSessions';
-    }
-    if (mMins > hi + 30) return scenario === 'double-back-to-back' ? 'rapidRecovery' : 'postWorkout';
-  }
-
-  // Late-to-early: last meal is pre-sleep
-  if (scenario === 'late-to-early' && mealIndex === totalMeals - 1) return 'preSleep';
-
-  if (mealIndex === 0) return 'morning';
-  if (mealIndex === totalMeals - 1) return 'evening';
-  return 'midDay';
-}
-
-// -----------------------------------------------------------------------------
 // ROLE GRADIENT COLOURS (for the horizontal bar)
 // -----------------------------------------------------------------------------
 const ROLE_GRADIENT = {
@@ -554,7 +580,18 @@ const ROLE_GRADIENT = {
 // -----------------------------------------------------------------------------
 // VISUAL DAY BAR COMPONENT
 // -----------------------------------------------------------------------------
-function DayBar({ wakeTime, sleepTime, trainingTime1, trainingTime2, numSessions, meals, scenario, mealRoles = [] }) {
+function DayBar({
+  wakeTime,
+  sleepTime,
+  trainingTime1,
+  trainingTime2,
+  numSessions,
+  meals,
+  scenario,
+  mealRolePlan = [],
+  sessionDuration1Mins = 60,
+  sessionDuration2Mins = 60,
+}) {
   const dayStart = parseMins(wakeTime);
   const dayEnd = dayStart + (16 * 60);
   const duration = dayEnd - dayStart;
@@ -563,26 +600,26 @@ function DayBar({ wakeTime, sleepTime, trainingTime1, trainingTime2, numSessions
     return Math.max(0, Math.min(100, ((absMins - dayStart) / duration) * 100));
   }
 
-  const SESSION_DURATION = 60;
   const t1Mins = toAbsoluteMinutes(trainingTime1, dayStart);
   const t2Mins = numSessions === 2
     ? toAbsoluteMinutes(trainingTime2, dayStart, { forceNextDay: scenario === 'late-to-early' })
     : null;
   const trainingMarkers = [
-    { mins: t1Mins, time: trainingTime1, idx: 0 },
-    ...(t2Mins !== null ? [{ mins: t2Mins, time: trainingTime2, idx: 1 }] : []),
+    { mins: t1Mins, time: trainingTime1, idx: 0, duration: clampSessionDuration(sessionDuration1Mins) },
+    ...(t2Mins !== null ? [{ mins: t2Mins, time: trainingTime2, idx: 1, duration: clampSessionDuration(sessionDuration2Mins) }] : []),
   ].filter(marker => marker.mins >= dayStart && marker.mins <= dayEnd);
 
   // Build zone segments that cover the full bar.
   // Each meal "owns" a zone from its midpoint-to-prev to its midpoint-to-next.
   // Training sessions get inserted as hard zones.
   // Assign roles to each meal
-  const resolvedMealRoles = (
-    mealRoles.length === meals.length
-      ? mealRoles
-      : meals.map((meal, i) => getMealRole(meal, i, meals.length, scenario, t1Mins, t2Mins))
-  );
-  const mealMins = meals.map(m => toAbsoluteMinutes(m.time, dayStart));
+  const roleByMealIndex = new Map(mealRolePlan.map(entry => [entry.mealIndex, entry]));
+  const resolvedMealRoles = meals.map((_, i) => roleByMealIndex.get(i)?.role || 'midDay');
+  const mealMins = meals.map((meal, i) => (
+    roleByMealIndex.get(i)?.displayAbsMins
+    ?? roleByMealIndex.get(i)?.absMins
+    ?? toAbsoluteMinutes(meal.rawTime || meal.time, dayStart)
+  ));
 
   // Build gradient stops from meal roles + training sessions.
   // Each meal contributes its role colour at its position.
@@ -628,7 +665,7 @@ function DayBar({ wakeTime, sleepTime, trainingTime1, trainingTime2, numSessions
   }, []);
   const trainingBands = trainingMarkers.map(marker => {
     const start = pctFromAbs(marker.mins);
-    const end = pctFromAbs(marker.mins + SESSION_DURATION);
+    const end = pctFromAbs(marker.mins + marker.duration);
     const left = Math.max(0, start - 2.2);
     const right = Math.min(100, end + 2.2);
     return {
@@ -761,7 +798,17 @@ function DayBar({ wakeTime, sleepTime, trainingTime1, trainingTime2, numSessions
 // -----------------------------------------------------------------------------
 // ANNOTATED MEAL CARD
 // -----------------------------------------------------------------------------
-function MealCard({ meal, role, annotation, isExpanded, onToggle, mealIndex, timeWindowLabel = null }) {
+function MealCard({
+  meal,
+  role,
+  annotation,
+  isExpanded,
+  onToggle,
+  mealIndex,
+  timeWindowLabel = null,
+  windowRangeLabel = null,
+  actualTimeLabel = null,
+}) {
   const s = ROLE_STYLES[role] || ROLE_STYLES.midDay;
   const a = annotation;
 
@@ -786,10 +833,7 @@ function MealCard({ meal, role, annotation, isExpanded, onToggle, mealIndex, tim
             <div className="flex items-center gap-2 flex-wrap">
               <span className="flex items-center gap-1 text-gray-400 text-sm shrink-0">
                 <HiClock className="text-xs" />
-                <span className="font-medium">{timeWindowLabel || meal.time}</span>
-                {timeWindowLabel && (
-                  <span className="text-[11px] text-gray-500">({meal.time})</span>
-                )}
+                <span className="font-medium">{actualTimeLabel || meal.time}</span>
               </span>
               <span className="text-white font-semibold text-sm truncate">{meal.label}</span>
               {(meal.isPreTrain || meal.isPostTrain) && (
@@ -798,6 +842,11 @@ function MealCard({ meal, role, annotation, isExpanded, onToggle, mealIndex, tim
                 }`}>
                   <HiLightningBolt className="inline text-xs mr-0.5" />
                   {meal.gi}
+                </span>
+              )}
+              {timeWindowLabel && (
+                <span className={`text-[11px] px-2 py-0.5 rounded-full border ${s.border} ${s.text}`}>
+                  {windowRangeLabel ? `${timeWindowLabel} - ${windowRangeLabel}` : timeWindowLabel}
                 </span>
               )}
             </div>
@@ -939,11 +988,7 @@ function MealCard({ meal, role, annotation, isExpanded, onToggle, mealIndex, tim
 // -----------------------------------------------------------------------------
 // TRAINING EVENT CARD
 // -----------------------------------------------------------------------------
-function TrainingEvent({ time, label, scenario, sessionNum, weightKg }) {
-  const choPer30Min = scenario === 'double-back-to-back'
-    ? `~${Math.round(weightKg * 0.6)} g carbs` // ~0.6g/kg in first 30 min
-    : null;
-
+function TrainingEvent({ time, label }) {
   return (
     <Motion.div
       initial={{ opacity: 0, x: -16 }}
@@ -962,11 +1007,6 @@ function TrainingEvent({ time, label, scenario, sessionNum, weightKg }) {
           </span>
           <span className="text-white font-semibold text-sm">{label}</span>
         </div>
-        {scenario === 'double-back-to-back' && sessionNum === 1 && choPer30Min && (
-          <span className="text-xs text-orange-400 bg-orange-500/10 border border-orange-500/30 px-2 py-0.5 rounded-full">
-            Start recovery immediately - {choPer30Min}/30 min
-          </span>
-        )}
       </div>
     </Motion.div>
   );
@@ -978,12 +1018,13 @@ function TrainingEvent({ time, label, scenario, sessionNum, weightKg }) {
 export default function MealTimingSection({ results }) {
   const [numSessions, setNumSessions] = useState(1);
   const [trainingTime2, setTrainingTime2] = useState('12:00');
+  const [sessionDuration1Mins, setSessionDuration1Mins] = useState(60);
+  const [sessionDuration2Mins, setSessionDuration2Mins] = useState(60);
   const [scenarioOverride, setScenarioOverride] = useState(null);
   const [expandedIndex, setExpandedIndex] = useState(null);
   const hasMealPlan = Boolean(results?.mealPlan?.meals?.length);
   const mealPlan = results?.mealPlan;
   const mealPlanInputs = results?.mealPlanInputs || {};
-  const weightKg = results?.weightKg ?? 80;
   const goal = results?.goal || 'maintenance';
   const trainingTime1 = mealPlanInputs.trainingTime || '17:00';
   const wakeTime = mealPlanInputs.wakeTime || '07:00';
@@ -991,7 +1032,7 @@ export default function MealTimingSection({ results }) {
   const sleepTime = addMins(wakeTime, 16 * 60); // 16h after wake (8h sleep)
   const dayStartMins = parseMins(wakeTime);
   const dayEndMins = dayStartMins + (16 * 60);
-  const scenarioContext = getScenarioContext(numSessions, trainingTime1, trainingTime2);
+  const scenarioContext = getScenarioContext(numSessions, trainingTime1, trainingTime2, sessionDuration1Mins);
   const autoScenario = scenarioContext.defaultScenario;
   const allowedScenarios = new Set(
     Object.entries(scenarioContext.validScenarios)
@@ -1015,6 +1056,8 @@ export default function MealTimingSection({ results }) {
     trainingTime2,
     numSessions,
     scenario,
+    sessionDuration1Mins,
+    sessionDuration2Mins,
   });
   const mealRoleByIndex = new Map(mealRolePlan.map(entry => [entry.mealIndex, entry]));
   const mealsBeforeSessionOne = mealRolePlan.filter(entry => entry.absMins < t1Mins).length;
@@ -1027,6 +1070,16 @@ export default function MealTimingSection({ results }) {
 
   const handleTime2Change = (v) => {
     setTrainingTime2(v);
+    setScenarioOverride(null);
+  };
+
+  const handleDuration1Change = (v) => {
+    setSessionDuration1Mins(clampSessionDuration(v));
+    setScenarioOverride(null);
+  };
+
+  const handleDuration2Change = (v) => {
+    setSessionDuration2Mins(clampSessionDuration(v));
     setScenarioOverride(null);
   };
 
@@ -1064,9 +1117,11 @@ export default function MealTimingSection({ results }) {
       type: 'meal',
       meal,
       mealIndex,
-      absMins: rolePlan?.absMins ?? toAbsoluteMinutes(meal.rawTime || meal.time, dayStartMins),
-      role: rolePlan?.role ?? getMealRole(meal, mealIndex, meals.length, scenario, t1Mins, t2Mins),
+      absMins: rolePlan?.displayAbsMins ?? rolePlan?.absMins ?? toAbsoluteMinutes(meal.rawTime || meal.time, dayStartMins),
+      role: rolePlan?.role ?? 'midDay',
       timeWindowLabel: rolePlan?.timeWindowLabel || null,
+      windowRangeLabel: rolePlan?.windowRangeLabel || null,
+      actualTimeLabel: rolePlan?.actualTimeLabel || meal.time,
     };
   });
 
@@ -1151,6 +1206,42 @@ export default function MealTimingSection({ results }) {
                 onChange={e => handleTime2Change(e.target.value)}
                 className="bg-transparent text-white text-sm font-medium w-full outline-none"
               />
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs text-gray-400 mb-2 font-medium">Session 1 duration (min)</label>
+            <div className="flex items-center gap-2 bg-dark border border-dark-border rounded-lg px-3 py-2">
+              <HiClock className="text-gray-500 text-sm shrink-0" />
+              <input
+                type="number"
+                min={30}
+                max={240}
+                step={5}
+                value={sessionDuration1Mins}
+                onChange={e => handleDuration1Change(e.target.value)}
+                className="bg-transparent text-white text-sm font-medium w-full outline-none"
+              />
+              <span className="text-gray-600 text-xs shrink-0">min</span>
+            </div>
+          </div>
+
+          <div className={numSessions === 1 ? 'opacity-40 pointer-events-none' : ''}>
+            <label className="block text-xs text-gray-400 mb-2 font-medium">Session 2 duration (min)</label>
+            <div className="flex items-center gap-2 bg-dark border border-dark-border rounded-lg px-3 py-2">
+              <HiClock className="text-gray-500 text-sm shrink-0" />
+              <input
+                type="number"
+                min={30}
+                max={240}
+                step={5}
+                value={sessionDuration2Mins}
+                onChange={e => handleDuration2Change(e.target.value)}
+                className="bg-transparent text-white text-sm font-medium w-full outline-none"
+              />
+              <span className="text-gray-600 text-xs shrink-0">min</span>
             </div>
           </div>
         </div>
@@ -1253,7 +1344,9 @@ export default function MealTimingSection({ results }) {
           numSessions={numSessions}
           meals={meals}
           scenario={scenario}
-          mealRoles={mealRolePlan.map(entry => entry.role)}
+          mealRolePlan={mealRolePlan}
+          sessionDuration1Mins={sessionDuration1Mins}
+          sessionDuration2Mins={sessionDuration2Mins}
         />
 
         {/* -- Expand All / Collapse All ----------------------- */}
@@ -1295,9 +1388,6 @@ export default function MealTimingSection({ results }) {
                     key={`train-${ei}`}
                     time={event.time}
                     label={event.label}
-                    scenario={scenario}
-                    sessionNum={event.sessionNum}
-                    weightKg={weightKg}
                   />
                 );
               }
@@ -1316,6 +1406,8 @@ export default function MealTimingSection({ results }) {
                   onToggle={() => toggleExpand(mealIndex)}
                   mealIndex={mealIndex}
                   timeWindowLabel={event.timeWindowLabel}
+                  windowRangeLabel={event.windowRangeLabel}
+                  actualTimeLabel={event.actualTimeLabel}
                 />
               );
             })}
@@ -1343,9 +1435,6 @@ export default function MealTimingSection({ results }) {
                   key={`next-day-train-${ei}`}
                   time={`${event.time} (+1 day)`}
                   label={event.label}
-                  scenario={scenario}
-                  sessionNum={event.sessionNum}
-                  weightKg={weightKg}
                 />
               ))}
             </div>
