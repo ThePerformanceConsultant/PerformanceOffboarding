@@ -5,6 +5,7 @@ import TDEEChart from './TDEEChart';
 import WeightProjection from './WeightProjection';
 import MealPlanSection from './MealPlanSection';
 import MealTimingSection from './MealTimingSection';
+import SupplementationSection from './SupplementationSection';
 
 export default function ResultsSection({ results, weightUnit, onShuffleMealPlan }) {
   const [simpleMode, setSimpleMode] = useState(false);
@@ -108,6 +109,9 @@ export default function ResultsSection({ results, weightUnit, onShuffleMealPlan 
 
         {/* Meal Timing Troubleshooter */}
         <MealTimingSection results={results} />
+
+        {/* Supplementation Blueprint */}
+        <SupplementationSection />
       </div>
     </section>
   );

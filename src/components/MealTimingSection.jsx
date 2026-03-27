@@ -40,17 +40,45 @@ function addMins(timeStr, minutes) {
   return format24h(parseMins(timeStr) + minutes);
 }
 
-function detectScenario(numSessions, t1, t2) {
-  if (numSessions === 1) return 'single';
-  const m1 = parseMins(t1);
-  const m2 = parseMins(t2);
-  const isEvening = (m) => m >= 17 * 60;
-  const isMorning = (m) => m <= 10 * 60;
-  const isLateToEarly = isEvening(m1) && isMorning(m2) && m2 <= m1;
-  if (isLateToEarly) return 'late-to-early';
-  const forwardGap = (m2 - m1 + 1440) % 1440;
-  if (forwardGap <= 3 * 60) return 'double-back-to-back';
-  return 'double-spaced';
+function getScenarioContext(numSessions, t1, t2) {
+  const base = {
+    m1: parseMins(t1),
+    m2: parseMins(t2),
+    forwardGapMinutes: null,
+    isLateToEarly: false,
+    validScenarios: {
+      single: numSessions === 1,
+      'double-back-to-back': false,
+      'double-spaced': false,
+      'late-to-early': false,
+    },
+    defaultScenario: 'single',
+  };
+
+  if (numSessions === 1) return base;
+
+  const isEvening = base.m1 >= (17 * 60);
+  const isMorning = base.m2 <= (10 * 60);
+  const wrapsToNextDay = base.m2 <= base.m1;
+  const forwardGapMinutes = (base.m2 - base.m1 + 1440) % 1440;
+  const isLateToEarly = isEvening && isMorning && wrapsToNextDay;
+  const isDoubleSpaced = !isLateToEarly && forwardGapMinutes >= 240;
+  const isBackToBack = !isLateToEarly && forwardGapMinutes < 240;
+
+  return {
+    ...base,
+    forwardGapMinutes,
+    isLateToEarly,
+    validScenarios: {
+      single: false,
+      'double-back-to-back': isBackToBack,
+      'double-spaced': isDoubleSpaced,
+      'late-to-early': isLateToEarly,
+    },
+    defaultScenario: isLateToEarly
+      ? 'late-to-early'
+      : (isDoubleSpaced ? 'double-spaced' : 'double-back-to-back'),
+  };
 }
 
 function toAbsoluteMinutes(timeStr, dayStartMins, options = {}) {
@@ -59,6 +87,119 @@ function toAbsoluteMinutes(timeStr, dayStartMins, options = {}) {
   if (mins < dayStartMins) mins += 1440;
   if (forceNextDay) mins += 1440;
   return mins;
+}
+
+function buildMealRolePlan({
+  meals,
+  wakeTime,
+  trainingTime1,
+  trainingTime2,
+  numSessions,
+  scenario,
+}) {
+  if (!meals?.length) return [];
+
+  const dayStart = parseMins(wakeTime);
+  const t1Abs = toAbsoluteMinutes(trainingTime1, dayStart);
+  const t2Abs = numSessions === 2
+    ? toAbsoluteMinutes(trainingTime2, dayStart, { forceNextDay: scenario === 'late-to-early' })
+    : null;
+
+  const mealTimeline = meals.map((meal, mealIndex) => ({
+    mealIndex,
+    absMins: toAbsoluteMinutes(meal.rawTime || meal.time, dayStart),
+  }));
+  const sorted = [...mealTimeline].sort((a, b) => a.absMins - b.absMins);
+  const orderByMealIndex = new Map(sorted.map((entry, order) => [entry.mealIndex, order]));
+
+  const lastBefore = (sessionAbs) => {
+    let idx = null;
+    sorted.forEach((entry) => {
+      if (entry.absMins < sessionAbs) idx = entry.mealIndex;
+    });
+    return idx;
+  };
+  const firstAfter = (sessionAbs) => {
+    const found = sorted.find(entry => entry.absMins > sessionAbs);
+    return found ? found.mealIndex : null;
+  };
+
+  const pre1Idx = lastBefore(t1Abs);
+  const post1Idx = firstAfter(t1Abs);
+  const pre2Idx = t2Abs !== null ? lastBefore(t2Abs) : null;
+  const post2Idx = t2Abs !== null ? firstAfter(t2Abs) : null;
+  const finalMealIdx = sorted[sorted.length - 1]?.mealIndex ?? null;
+
+  return mealTimeline.map(({ mealIndex, absMins }) => {
+    const chronologicalOrder = orderByMealIndex.get(mealIndex) ?? mealIndex;
+    let role = chronologicalOrder === 0
+      ? 'morning'
+      : (chronologicalOrder === (meals.length - 1) ? 'evening' : 'midDay');
+    let timeWindowLabel = null;
+
+    const mealTimeLabel = meals[mealIndex].time;
+    const beforeS1 = absMins < t1Abs;
+    const betweenSessions = t2Abs !== null && absMins > t1Abs && absMins < t2Abs;
+    const afterS2 = t2Abs !== null && absMins > t2Abs;
+    const leadToS2 = t2Abs !== null ? (t2Abs - absMins) : null;
+
+    const setPre = (sessionTime) => {
+      role = 'preWorkout';
+      timeWindowLabel = `Pre-session window to ${sessionTime}`;
+    };
+    const setRapid = () => {
+      role = 'rapidRecovery';
+      timeWindowLabel = 'Between sessions refuel window';
+    };
+    const setPost = () => {
+      role = 'postWorkout';
+      timeWindowLabel = `Post-workout to ${mealTimeLabel}`;
+    };
+
+    if (numSessions === 1) {
+      if (mealIndex === pre1Idx && beforeS1) setPre(trainingTime1);
+      if (mealIndex === post1Idx && absMins > t1Abs) setPost();
+    } else if (scenario === 'double-back-to-back') {
+      if (mealIndex === pre1Idx && beforeS1) setPre(trainingTime1);
+      if (betweenSessions) setRapid();
+      if (mealIndex === post2Idx && afterS2) setPost();
+    } else if (scenario === 'double-spaced') {
+      if (mealIndex === pre1Idx && beforeS1) setPre(trainingTime1);
+      if (mealIndex === post1Idx && absMins > t1Abs && (!t2Abs || absMins < t2Abs)) setPost();
+
+      if (betweenSessions) {
+        const isSecondSessionPreWindow = (
+          mealIndex === pre2Idx &&
+          Number.isFinite(leadToS2) &&
+          leadToS2 >= 30 &&
+          leadToS2 <= 150
+        );
+        if (isSecondSessionPreWindow) {
+          setPre(trainingTime2);
+        } else if (mealIndex !== post1Idx) {
+          role = 'betweenSessions';
+          timeWindowLabel = null;
+        }
+      }
+
+      if (mealIndex === post2Idx && afterS2) setPost();
+    } else if (scenario === 'late-to-early') {
+      if (mealIndex === pre1Idx && beforeS1) setPre(trainingTime1);
+      if (mealIndex === post1Idx && absMins > t1Abs && mealIndex !== finalMealIdx) setPost();
+    }
+
+    if (scenario === 'late-to-early' && mealIndex === finalMealIdx) {
+      role = 'preSleep';
+      timeWindowLabel = 'Pre-sleep recovery window';
+    }
+
+    return {
+      mealIndex,
+      absMins,
+      role,
+      timeWindowLabel,
+    };
+  });
 }
 
 // -----------------------------------------------------------------------------
@@ -313,7 +454,7 @@ const SCENARIO_META = {
   'double-back-to-back': {
     label: 'Double Training - Back to Back',
     emoji: '🔥',
-    tagline: 'Two sessions within 3 h. Rapid glycogen restoration is your #1 priority between sessions. Speed > complexity.',
+    tagline: 'Two sessions within 4 h. Rapid glycogen restoration is your #1 priority between sessions. Speed > complexity.',
     colour: 'orange',
     warning: 'Keep recovery tight between sessions: early carbohydrate and protein intake is usually the main limiter of second-session quality.',
     principles: [
@@ -413,7 +554,7 @@ const ROLE_GRADIENT = {
 // -----------------------------------------------------------------------------
 // VISUAL DAY BAR COMPONENT
 // -----------------------------------------------------------------------------
-function DayBar({ wakeTime, sleepTime, trainingTime1, trainingTime2, numSessions, meals, scenario }) {
+function DayBar({ wakeTime, sleepTime, trainingTime1, trainingTime2, numSessions, meals, scenario, mealRoles = [] }) {
   const dayStart = parseMins(wakeTime);
   const dayEnd = dayStart + (16 * 60);
   const duration = dayEnd - dayStart;
@@ -436,8 +577,10 @@ function DayBar({ wakeTime, sleepTime, trainingTime1, trainingTime2, numSessions
   // Each meal "owns" a zone from its midpoint-to-prev to its midpoint-to-next.
   // Training sessions get inserted as hard zones.
   // Assign roles to each meal
-  const mealRoles = meals.map((meal, i) =>
-    getMealRole(meal, i, meals.length, scenario, t1Mins, t2Mins)
+  const resolvedMealRoles = (
+    mealRoles.length === meals.length
+      ? mealRoles
+      : meals.map((meal, i) => getMealRole(meal, i, meals.length, scenario, t1Mins, t2Mins))
   );
   const mealMins = meals.map(m => toAbsoluteMinutes(m.time, dayStart));
 
@@ -449,12 +592,12 @@ function DayBar({ wakeTime, sleepTime, trainingTime1, trainingTime2, numSessions
   // Start: first meal's colour at 0%
   stops.push({
     pos: 0,
-    colour: forcePurple ? ROLE_GRADIENT.preSleep : (ROLE_GRADIENT[mealRoles[0]] || ROLE_GRADIENT.morning),
+    colour: forcePurple ? ROLE_GRADIENT.preSleep : (ROLE_GRADIENT[resolvedMealRoles[0]] || ROLE_GRADIENT.morning),
   });
 
   // Add each meal as a smooth stop
   meals.forEach((meal, i) => {
-    const role = mealRoles[i];
+    const role = resolvedMealRoles[i];
     const colour = forcePurple ? ROLE_GRADIENT.preSleep : (ROLE_GRADIENT[role] || ROLE_GRADIENT.midDay);
     const pos = pctFromAbs(mealMins[i]);
     stops.push({ pos, colour });
@@ -536,7 +679,7 @@ function DayBar({ wakeTime, sleepTime, trainingTime1, trainingTime2, numSessions
       >
         {/* Meal dots */}
         {meals.map((meal, i) => {
-          const role = mealRoles[i];
+          const role = resolvedMealRoles[i];
           const s = ROLE_STYLES[role] || ROLE_STYLES.midDay;
           const mp = pctFromAbs(mealMins[i]);
           return (
@@ -618,7 +761,7 @@ function DayBar({ wakeTime, sleepTime, trainingTime1, trainingTime2, numSessions
 // -----------------------------------------------------------------------------
 // ANNOTATED MEAL CARD
 // -----------------------------------------------------------------------------
-function MealCard({ meal, role, annotation, isExpanded, onToggle, mealIndex }) {
+function MealCard({ meal, role, annotation, isExpanded, onToggle, mealIndex, timeWindowLabel = null }) {
   const s = ROLE_STYLES[role] || ROLE_STYLES.midDay;
   const a = annotation;
 
@@ -643,7 +786,10 @@ function MealCard({ meal, role, annotation, isExpanded, onToggle, mealIndex }) {
             <div className="flex items-center gap-2 flex-wrap">
               <span className="flex items-center gap-1 text-gray-400 text-sm shrink-0">
                 <HiClock className="text-xs" />
-                <span className="font-medium">{meal.time}</span>
+                <span className="font-medium">{timeWindowLabel || meal.time}</span>
+                {timeWindowLabel && (
+                  <span className="text-[11px] text-gray-500">({meal.time})</span>
+                )}
               </span>
               <span className="text-white font-semibold text-sm truncate">{meal.label}</span>
               {(meal.isPreTrain || meal.isPostTrain) && (
@@ -838,17 +984,20 @@ export default function MealTimingSection({ results }) {
   const mealPlan = results?.mealPlan;
   const mealPlanInputs = results?.mealPlanInputs || {};
   const weightKg = results?.weightKg ?? 80;
+  const goal = results?.goal || 'maintenance';
   const trainingTime1 = mealPlanInputs.trainingTime || '17:00';
   const wakeTime = mealPlanInputs.wakeTime || '07:00';
   const meals = mealPlan?.meals || [];
   const sleepTime = addMins(wakeTime, 16 * 60); // 16h after wake (8h sleep)
   const dayStartMins = parseMins(wakeTime);
   const dayEndMins = dayStartMins + (16 * 60);
-  const canSelectLateToEarly = numSessions === 2 && parseMins(trainingTime1) >= (17 * 60);
-  const autoScenario = detectScenario(numSessions, trainingTime1, trainingTime2);
-  const allowedScenarios = numSessions === 1
-    ? new Set(['single'])
-    : new Set(Object.keys(SCENARIO_META).filter(key => key !== 'late-to-early' || canSelectLateToEarly));
+  const scenarioContext = getScenarioContext(numSessions, trainingTime1, trainingTime2);
+  const autoScenario = scenarioContext.defaultScenario;
+  const allowedScenarios = new Set(
+    Object.entries(scenarioContext.validScenarios)
+      .filter(([, isValid]) => isValid)
+      .map(([scenarioKey]) => scenarioKey)
+  );
   const scenario = (scenarioOverride && allowedScenarios.has(scenarioOverride))
     ? scenarioOverride
     : autoScenario;
@@ -859,6 +1008,17 @@ export default function MealTimingSection({ results }) {
   const t2Mins = numSessions === 2
     ? toAbsoluteMinutes(trainingTime2, dayStartMins, { forceNextDay: scenario === 'late-to-early' })
     : null;
+  const mealRolePlan = buildMealRolePlan({
+    meals,
+    wakeTime,
+    trainingTime1,
+    trainingTime2,
+    numSessions,
+    scenario,
+  });
+  const mealRoleByIndex = new Map(mealRolePlan.map(entry => [entry.mealIndex, entry]));
+  const mealsBeforeSessionOne = mealRolePlan.filter(entry => entry.absMins < t1Mins).length;
+  const showMealFlexibilityNote = mealsBeforeSessionOne >= 2;
 
   const handleNumSessionsChange = (n) => {
     setNumSessions(n);
@@ -867,11 +1027,17 @@ export default function MealTimingSection({ results }) {
 
   const handleTime2Change = (v) => {
     setTrainingTime2(v);
+    setScenarioOverride(null);
   };
 
   const handleScenarioChange = (v) => setScenarioOverride(v);
 
   const meta = SCENARIO_META[scenario] || SCENARIO_META.single;
+  const goalNarrative = {
+    'fat-loss': 'Fat loss goal: keep peri-workout meals intact and pull most energy reductions from non-peri meals.',
+    maintenance: 'Maintenance goal: keep peri-workout meals consistent and use non-peri meals to keep daily intake balanced.',
+    'muscle-growth': 'Muscle growth goal: keep peri-workout meals high quality and add extra energy around non-peri meals.',
+  }[goal] || 'Peri-workout meals stay consistent; non-peri meals are where daily intake is adjusted.';
 
   const trainingEvents = [
     {
@@ -892,12 +1058,17 @@ export default function MealTimingSection({ results }) {
       : []),
   ];
 
-  const mealEvents = meals.map((meal, mealIndex) => ({
-    type: 'meal',
-    meal,
-    mealIndex,
-    absMins: toAbsoluteMinutes(meal.time, dayStartMins),
-  }));
+  const mealEvents = meals.map((meal, mealIndex) => {
+    const rolePlan = mealRoleByIndex.get(mealIndex);
+    return {
+      type: 'meal',
+      meal,
+      mealIndex,
+      absMins: rolePlan?.absMins ?? toAbsoluteMinutes(meal.rawTime || meal.time, dayStartMins),
+      role: rolePlan?.role ?? getMealRole(meal, mealIndex, meals.length, scenario, t1Mins, t2Mins),
+      timeWindowLabel: rolePlan?.timeWindowLabel || null,
+    };
+  });
 
   const inDayTimelineEvents = [...mealEvents, ...trainingEvents.filter(event => event.absMins <= dayEndMins)]
     .sort((a, b) => (
@@ -989,19 +1160,16 @@ export default function MealTimingSection({ results }) {
           <label className="block text-xs text-gray-400 mb-2 font-medium">Training Scenario</label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {Object.entries(SCENARIO_META).map(([key, s]) => (
-                  <button
+                <button
                   key={key}
                   onClick={() => handleScenarioChange(key)}
-                  disabled={
-                    (numSessions === 1 && key !== 'single') ||
-                    (key === 'late-to-early' && !canSelectLateToEarly)
-                  }
+                  disabled={!scenarioContext.validScenarios[key]}
                   className={`flex items-center gap-2 p-3 rounded-lg border text-left transition-all cursor-pointer ${
                     scenario === key
                       ? 'border-gold/50 bg-gold/10 text-white'
                       : 'border-dark-border bg-dark text-gray-400 hover:border-gray-500'
                   } ${
-                    (numSessions === 1 && key !== 'single') || (key === 'late-to-early' && !canSelectLateToEarly)
+                    !scenarioContext.validScenarios[key]
                       ? 'opacity-30 cursor-not-allowed'
                       : ''
                   }`}
@@ -1061,6 +1229,21 @@ export default function MealTimingSection({ results }) {
           </div>
         </Motion.div>
 
+        <div className="rounded-xl border border-blue-500/20 bg-blue-500/8 p-3.5 space-y-2">
+          <p className="text-xs font-semibold text-blue-300">Practical Timing Notes</p>
+          {showMealFlexibilityNote && (
+            <p className="text-xs text-gray-300 leading-relaxed">
+              You have multiple meals before training. Feel free to move non-peri meals around for convenience and appetite as long as peri-workout meals stay anchored.
+            </p>
+          )}
+          <p className="text-xs text-gray-300 leading-relaxed">
+            For simplicity, this calculator distributes intake evenly across meals first, then prioritises peri-workout placement.
+          </p>
+          <p className="text-xs text-gray-300 leading-relaxed">
+            {goalNarrative}
+          </p>
+        </div>
+
         {/* -- Day Bar ------------------------------------------ */}
         <DayBar
           wakeTime={wakeTime}
@@ -1070,6 +1253,7 @@ export default function MealTimingSection({ results }) {
           numSessions={numSessions}
           meals={meals}
           scenario={scenario}
+          mealRoles={mealRolePlan.map(entry => entry.role)}
         />
 
         {/* -- Expand All / Collapse All ----------------------- */}
@@ -1119,7 +1303,7 @@ export default function MealTimingSection({ results }) {
               }
 
               const { meal, mealIndex } = event;
-              const role = getMealRole(meal, mealIndex, meals.length, scenario, t1Mins, t2Mins);
+              const role = event.role;
               const annotation = ANNOTATIONS[role] || ANNOTATIONS.midDay;
 
               return (
@@ -1131,6 +1315,7 @@ export default function MealTimingSection({ results }) {
                   isExpanded={expandedIndex === mealIndex}
                   onToggle={() => toggleExpand(mealIndex)}
                   mealIndex={mealIndex}
+                  timeWindowLabel={event.timeWindowLabel}
                 />
               );
             })}
