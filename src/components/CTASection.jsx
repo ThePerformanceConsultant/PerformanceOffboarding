@@ -31,7 +31,7 @@ export default function CTASection() {
           Message Me on WhatsApp
         </a>
         <p className="text-gray-400 text-xs mt-4">
-          No pressure, no obligation - just a conversation.
+          (No pressure or obligation)
         </p>
       </Motion.div>
     </section>
