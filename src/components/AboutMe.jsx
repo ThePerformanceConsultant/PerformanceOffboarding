@@ -40,13 +40,13 @@ export default function AboutMe() {
           className="text-gray-600 text-base sm:text-lg leading-relaxed space-y-4 mb-10 text-left"
         >
           <p>
-            I'm a molecular biologist turned performance nutritionist who's spent the last 15 years balancing competitive bodybuilding, contact sports, CrossFit, and running multiple businesses. I know what it's like to be pulled in every direction - juggling professional, personal and fitness goals.
+            I'm a molecular biologist and performance nutritionist who's spent the last 15 years balancing competitive bodybuilding, contact sports, CrossFit, and running multiple businesses. I know what it's like to be pulled in every direction - juggling professional, personal and fitness goals.
           </p>
           <p>
-            That's exactly why I built this tool. As an online coach, I help busy professionals reach their performance and physique goals with a detailed, personalised and stress-free approach. My clients are high achievers who aren't afraid of hard work - they just don't have time for elaborate 2-hour morning routines.
+            That's exactly why I built this tool. As an online coach, I help busy professionals reach their performance and physique goals with a detailed, personalised and stress-free approach. My clients are high achievers who aren't afraid of hard work and who don't have time for elaborate 2-hour morning routines.
           </p>
           <p>
-            My coaching ethos is simple: <strong className="text-gray-800">sustainability, consistency and effort</strong>. No fads, no extremes - just science-based strategies that fit your real life.
+            My coaching ethos is simple: <strong className="text-gray-800">sustainability, consistency and effort</strong>, using science-based strategies that fit your real life.
           </p>
         </Motion.div>
 
@@ -58,7 +58,7 @@ export default function AboutMe() {
           className="border-l-4 border-gold bg-white rounded-r-lg p-5 mb-10 text-left"
         >
           <p className="text-gray-700 italic text-base">
-            "I built this calculator so you can get clarity on your nutrition - no guesswork, no gatekeeping. If you want to take it further, I'm here to help."
+            "I built this calculator so you can get clarity on your nutrition without a tonne of mental gymnastics. If you want to take it further, I'm here to help."
           </p>
           <p className="text-gold-dark font-semibold mt-2 text-sm">- Dr Will Dyson</p>
         </Motion.div>
